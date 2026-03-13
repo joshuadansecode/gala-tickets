@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion — GalaTickets</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="lib/supabase.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="auth-page">
+
+  <div class="auth-container">
+    <div class="auth-card fade-in">
+      <div class="logo-area">
+        <div class="premium-logo"
+          style="background: var(--accent-glow); width: 64px; height: 64px; border-radius: 20px; margin: 0 auto 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 20px rgba(255, 0, 107, 0.3);">
+          <span style="font-size: 32px;">🎟️</span>
+        </div>
+        <h1>Gala<span>Tickets</span></h1>
+        <p class="subtitle" style="margin-bottom: 40px; color: var(--text-muted); letter-spacing: 0.2em;">PREMIUM ACCESS
+        </p>
+      </div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="email">Email address</label>
+          <input type="email" id="email" required placeholder="name@example.com">
+        </div>
+        <div class="form-group" style="margin-bottom: 8px;">
+          <label for="password">Password</label>
+          <input type="password" id="password" required placeholder="••••••••">
+        </div>
+        <div style="text-align: right; margin-bottom: 32px;">
+          <a href="#" style="color: var(--text-muted); font-size: 13px; text-decoration: none;">Mot de passe oublié
+            ?</a>
+        </div>
+        <button type="submit" class="btn btn-primary" id="login-btn">Se connecter</button>
+      </form>
+
+      <div class="auth-footer" style="margin-top: 48px;">
+        <p style="color: var(--text-muted);">Vous n'avez pas de compte ? <a href="signup.html"
+            style="color: white; text-decoration: none; font-weight: 600;">Créer un compte</a></p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { supabase, UI } from './js/auth.js';
+
+    const loginForm = document.getElementById('login-form');
+    const loginBtn = document.getElementById('login-btn');
+
+    // Check if already logged in
+    async function checkSession() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        redirectByRole(session.user.id);
+      }
+    }
+
+    async function redirectByRole(userId) {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error || !profile) {
+        UI.notify("Erreur de profil. Contactez l'admin.", "error");
+        await supabase.auth.signOut();
+        return;
+      }
+
+      if (profile.actif === false) {
+        UI.notify("Votre compte est en attente de validation par l'administrateur.", "warning");
+        await supabase.auth.signOut();
+        loginBtn.disabled = false;
+        loginBtn.innerText = 'Se connecter';
+        return;
+      }
+
+      const roles = {
+        'admin': 'admin.html',
+        'vendeur': 'vendeur.html',
+        'tresoriere': 'tresoriere.html',
+        'direction': 'direction.html',
+        'observateur': 'direction.html'
+      };
+
+      window.location.href = roles[profile.role] || 'login.html';
+    }
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      loginBtn.disabled = true;
+      loginBtn.innerText = 'Connexion...';
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        UI.notify(error.message, 'error');
+        loginBtn.disabled = false;
+        loginBtn.innerText = 'Se connecter';
+      } else {
+        redirectByRole(data.user.id);
+      }
+    });
+
+    checkSession();
+  </script>
+</body>
+
+</html>

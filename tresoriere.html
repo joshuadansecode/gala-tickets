@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GalaTickets — Trésorière</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;700&display=swap"
+    rel="stylesheet">
+  <script src="lib/supabase.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Base styles in style.css. Page-specific overrides below. */
+
+    .sidebar {
+      border-right: 1px solid rgba(32, 200, 178, 0.1);
+    }
+
+    .sidebar-logo-title span {
+      color: var(--teal);
+    }
+
+    .user-avatar {
+      background: linear-gradient(135deg, var(--teal), #7af0e8);
+    }
+
+    .user-role {
+      color: var(--teal);
+    }
+
+    .nav-item.active {
+      background: rgba(46, 196, 182, 0.1);
+      color: #7af0e8;
+      border: 1px solid rgba(46, 196, 182, 0.2);
+    }
+
+    .stat-value.teal {
+      color: #7af0e8;
+    }
+
+    .vendeur-card:hover {
+      border-color: rgba(46, 196, 182, 0.2);
+    }
+
+    .vc-row-val.teal {
+      color: #7af0e8;
+    }
+
+    .field-input:focus,
+    .field-select:focus {
+      border-color: var(--teal);
+      background: rgba(46, 196, 182, 0.05);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--teal), #7af0e8);
+    }
+
+    .badge-teal {
+      background: rgba(46, 196, 182, 0.15);
+      color: #7af0e8;
+    }
+
+    .progress-fill {
+      background: linear-gradient(90deg, var(--teal), #7af0e8);
+    }
+  </style>
+</head>
+</head>
+
+<body>
+  <aside class="sidebar"
+    style="background: var(--bg-pure); border-right: 1px solid var(--border-gray); width: 280px; z-index: 200;">
+    <div class="sidebar-logo" style="padding: 40px 24px; position: relative;">
+      <div class="sidebar-logo-title" style="font-size: 26px; font-weight: 900; letter-spacing: -0.05em;">Gala<span
+          style="color: grey; opacity: 0.5;">Tickets</span></div>
+      <div class="sidebar-logo-sub" style="font-size: 11px; opacity: 0.4; letter-spacing: 0.1em;">TREASURER DASHBOARD
+      </div>
+      <button onclick="toggleSidebar()"
+        style="position: absolute; right: 12px; top: 32px; background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer;">
+        ◀
+      </button>
+    </div>
+
+    <div class="sidebar-user" style="padding: 0 24px 32px;">
+      <div
+        style="background: var(--bg-card-light); padding: 16px; border-radius: 20px; border: 1px solid var(--border-gray); display: flex; align-items: center; gap: 12px; width: 100%;">
+        <div class="user-avatar" id="userInitials"
+          style="width: 40px; height: 40px; border-radius: 12px; background: var(--accent-blue); color: white; border: none; font-size: 14px;">
+          --</div>
+        <div class="user-info">
+          <div class="user-name" id="userName" style="font-size: 14px; font-weight: 700;">Chargement...</div>
+          <div class="user-role" style="font-size: 10px; opacity: 0.5;">TRÉSORIÈRE</div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="nav" style="padding: 0 16px;">
+      <button class="nav-item active" onclick="showView('dashboard', this)" style="margin-bottom: 8px;">
+        <span class="nav-icon">📈</span> Analytiques
+      </button>
+      <button class="nav-item" onclick="showView('versement', this)" style="margin-bottom: 8px;">
+        <span class="nav-icon">💵</span> Encaisser
+      </button>
+      <button class="nav-item" onclick="showView('historique', this)" style="margin-bottom: 8px;">
+        <span class="nav-icon">📋</span> Historique
+      </button>
+    </nav>
+
+    <div class="sidebar-bottom" style="padding: 24px 16px;">
+      <button class="btn-logout" onclick="logout()"
+        style="background: var(--bg-card-light); border: 1px solid var(--border-gray); color: var(--text-muted); border-radius: 16px; width: 100%; height: 44px; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;">
+        <span>🚪</span> Déconnexion
+      </button>
+    </div>
+  </aside>
+
+  <button class="sidebar-toggle" onclick="toggleSidebar()">
+    <span>☰</span>
+  </button>
+
+  <main class="main-content">
+
+    <!-- DASHBOARD -->
+    <div class="view active" id="view-dashboard">
+      <div class="page-header" style="margin-bottom: 40px;">
+        <h1 class="page-title">Analytiques</h1>
+        <p class="page-sub">Suivi global de la performance financière.</p>
+      </div>
+
+      <div class="stats-grid"
+        style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 40px;">
+        <div class="stat-card">
+          <div class="stat-label">Caisse Totale</div>
+          <div class="stat-value" id="stat-total-caisse" style="color: var(--accent-green); font-size: 24px;">—</div>
+          <div class="stat-sub">Versements encaissés</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Ventes Théoriques</div>
+          <div class="stat-value" id="stat-valeur-vendue" style="font-size: 24px;">—</div>
+          <div class="stat-sub">Total des ventes</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Reste à Recouvrer</div>
+          <div class="stat-value" id="stat-reste-du" style="color: var(--accent-glow); background: var(--accent-glow);            -webkit-background-clip: text;
+            background-clip: text;
+ -webkit-text-fill-color: transparent; font-size: 24px;">
+            —</div>
+          <div class="stat-sub">Chez les vendeurs</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Vendeurs</div>
+          <div class="stat-value" id="stat-vendeurs" style="font-size: 24px;">—</div>
+          <div class="stat-sub">Effectif actif</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="font-size: 20px; font-weight: 700;">Bilan par vendeur</h2>
+      </div>
+      <div class="vendeurs-grid" id="vendeurs-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+      </div>
+    </div>
+
+    <!-- VERSEMENT -->
+    <div class="view" id="view-versement">
+      <div class="page-header" style="margin-bottom: 40px;">
+        <h1 class="page-title">Enregistrer un versement</h1>
+        <p class="page-sub">Le vendeur vous remet les encaissements collectés.</p>
+      </div>
+      <div class="form-card"
+        style="background: var(--bg-card); border: 1px solid var(--border-gray); border-radius: var(--radius-lg); padding: 40px; max-width: 600px;">
+        <div class="field-group" style="margin-bottom: 24px;">
+          <label class="field-label"
+            style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Vendeur *</label>
+          <select class="field-select" id="v-vendeur" onchange="updateSolde()"
+            style="width: 100%; background: var(--bg-card-light); border: 1px solid var(--border-gray); color: white; padding: 16px; border-radius: var(--radius-sm); outline: none;">
+            <option value="">-- Sélectionner un vendeur --</option>
+          </select>
+        </div>
+
+        <div id="solde-info"
+          style="display:none; background: rgba(255,255,255,0.02); border-radius: 20px; padding: 24px; margin-bottom: 32px; border: 1px solid var(--border-gray);">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div>
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Total attendu</div>
+              <div style="font-size: 20px; font-weight: 800; color: white;" id="si-du">—</div>
+            </div>
+            <div>
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Déjà versé</div>
+              <div style="font-size: 20px; font-weight: 800; color: var(--accent-green);" id="si-verse">—</div>
+            </div>
+            <div style="grid-column: span 2; padding-top: 12px; border-top: 1px solid var(--border-gray);">
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Solde restant à
+                percevoir</div>
+              <div style="font-size: 24px; font-weight: 900; color: var(--accent-glow);" id="si-reste">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-group" style="margin-bottom: 20px;">
+          <label class="field-label"
+            style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Montant reçu (F CFA)
+            *</label>
+          <input class="field-input" id="v-montant" type="number" placeholder="0" min="1">
+        </div>
+        <div class="field-group" style="margin-bottom: 32px;">
+          <label class="field-label"
+            style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Note ou
+            Commentaire</label>
+          <input class="field-input" id="v-note" placeholder="Ex: Versement partiel, cash...">
+        </div>
+
+        <button class="btn btn-primary" id="btn-verser" onclick="enregistrerVersement()" style="width: 100%;">
+          💵 Valider l'encaissement
+        </button>
+      </div>
+    </div>
+
+    <!-- HISTORIQUE -->
+    <div class="view" id="view-historique">
+      <div class="page-header" style="margin-bottom: 40px;">
+        <h1 class="page-title">Historique des versements</h1>
+        <p class="page-sub">Journal complet des entrées en caisse.</p>
+      </div>
+
+      <div class="table-wrap"
+        style="background: var(--bg-card); border-radius: 24px; border: 1px solid var(--border-gray); overflow: hidden;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background: var(--bg-card-light);">
+              <th
+                style="padding: 20px; text-align: left; font-size: 12px; color: var(--text-muted); text-transform: uppercase;">
+                Date</th>
+              <th
+                style="padding: 20px; text-align: left; font-size: 12px; color: var(--text-muted); text-transform: uppercase;">
+                Vendeur</th>
+              <th
+                style="padding: 20px; text-align: left; font-size: 12px; color: var(--text-muted); text-transform: uppercase;">
+                Montant</th>
+              <th
+                style="padding: 20px; text-align: left; font-size: 12px; color: var(--text-muted); text-transform: uppercase;">
+                Note</th>
+              <th
+                style="padding: 20px; text-align: left; font-size: 12px; color: var(--text-muted); text-transform: uppercase;">
+                Perçu par</th>
+              <th
+                style="padding: 20px; text-align: left; font-size: 12px; color: var(--text-muted); text-transform: uppercase;">
+                Statut</th>
+              <th
+                style="padding: 20px; text-align: right; font-size: 12px; color: var(--text-muted); text-transform: uppercase;">
+                Action</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-historique"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script type="module">
+    import { supabase, Auth, UI } from './js/auth.js';
+
+    window.supabase = supabase;
+    window.UI = UI;
+    const sb = supabase;
+
+    let currentUser = null;
+    let bilanVendeurs = [];
+    let vendeursList = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const result = await Auth.requireAuth('tresoriere');
+      if (!result) return;
+
+      const { session, profile } = result;
+      currentUser = { ...profile, uid: session.user.id };
+      document.getElementById('userInitials').textContent = (profile.prenom[0] + profile.nom[0]).toUpperCase();
+      document.getElementById('userName').textContent = profile.prenom + ' ' + profile.nom;
+      await chargerDonnees();
+    });
+
+    async function chargerDonnees() {
+      // Bilan vendeurs via vue
+      const { data: bilan } = await sb.from('v_bilan_vendeurs').select('*');
+      bilanVendeurs = bilan || [];
+
+      // Vendeurs liste pour select
+      const { data: vends } = await sb.from('profiles').select('id,nom,prenom').eq('role', 'vendeur').eq('actif', true);
+      vendeursList = vends || [];
+
+      // Historique versements
+      const { data: hist } = await sb.from('versements_caisse')
+        .select('*, vendeur:profiles!versements_caisse_vendeur_id_fkey(nom,prenom), tres:profiles!versements_caisse_tresoriere_id_fkey(nom,prenom)')
+        .order('created_at', { ascending: false });
+
+      renderDashboard();
+      renderSelectVendeurs();
+      renderHistorique(hist || []);
+    }
+
+    function renderDashboard() {
+      const totalCaisse = bilanVendeurs.reduce((s, v) => s + (v.verse_a_tresoriere || 0), 0);
+      const valeurVendue = bilanVendeurs.reduce((s, v) => s + (v.montant_du || 0), 0);
+      const resteDu = valeurVendue - totalCaisse;
+
+      document.getElementById('stat-total-caisse').textContent = fmtMoney(totalCaisse);
+      document.getElementById('stat-valeur-vendue').textContent = fmtMoney(valeurVendue);
+      document.getElementById('stat-reste-du').textContent = fmtMoney(Math.max(0, resteDu));
+      document.getElementById('stat-vendeurs').textContent = bilanVendeurs.length;
+
+      const grid = document.getElementById('vendeurs-grid');
+      if (!bilanVendeurs.length) {
+        grid.innerHTML = `<div class="empty-state" style="grid-column: 1/-1; padding: 60px; text-align: center; background: var(--bg-card); border-radius: 24px; border: 1px dashed var(--border-gray);"><div class="empty-icon" style="font-size: 40px; margin-bottom: 16px;">👥</div><div class="empty-text" style="color: var(--text-muted); font-size: 16px;">Aucun vendeur enregistré</div></div>`;
+        return;
+      }
+      grid.innerHTML = bilanVendeurs.map(v => {
+        const du = v.montant_du || 0;
+        const verse = v.verse_a_tresoriere || 0;
+        const reste = Math.max(0, du - verse);
+        const pct = du > 0 ? Math.min(100, Math.round(verse / du * 100)) : 0;
+        return `
+        <div class="vendeur-card" style="background: var(--bg-card); border: 1px solid var(--border-gray); border-radius: 28px; padding: 24px; transition: var(--transition);">
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
+                <div style="width: 52px; height: 52px; border-radius: 16px; background: var(--bg-card-light); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; color: white; border: 1px solid var(--border-gray);">
+                    ${v.vendeur.split(' ').map(n => n[0]).join('').toUpperCase()}
+                </div>
+                <div>
+                    <div style="font-weight: 700; font-size: 16px; color: var(--text-primary);">${v.vendeur}</div>
+                    <div style="font-size: 12px; color: var(--text-muted); opacity: 0.7;">${v.total_vendus} tickets vendus</div>
+                </div>
+                <div style="margin-left: auto;">
+                    <div style="font-size: 11px; font-weight: 700; color: ${pct === 100 ? 'var(--accent-green)' : 'var(--accent-amber)'}; background: ${pct === 100 ? 'rgba(0, 230, 118, 0.1)' : 'rgba(255, 193, 7, 0.1)'}; padding: 4px 10px; border-radius: 20px;">
+                        ${pct}% versé
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                <div style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 14px;">
+                    <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">A verser</div>
+                    <div style="font-weight: 700; font-size: 15px;">${fmtMoney(du)}</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 14px;">
+                    <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Reçu</div>
+                    <div style="font-weight: 700; font-size: 15px; color: var(--accent-green);">${fmtMoney(verse)}</div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 11px; color: var(--text-muted);">Progression du recouvrement</span>
+                <span style="font-size: 12px; font-weight: 700; color: ${reste > 0 ? 'var(--accent-glow)' : 'white'};">
+                    ${reste > 0 ? 'Reste ' + fmtMoney(reste) : 'Terminé'}
+                </span>
+            </div>
+            <div style="height: 6px; background: var(--bg-card-light); border-radius: 10px; overflow: hidden;">
+                <div style="height: 100%; width: ${pct}%; background: ${pct === 100 ? 'var(--accent-green)' : 'var(--accent-glow)'}; border-radius: 10px; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+            </div>
+        </div>`;
+      }).join('');
+    }
+
+    function renderSelectVendeurs() {
+      const sel = document.getElementById('v-vendeur');
+      sel.innerHTML = '<option value="">-- Sélectionner un vendeur --</option>';
+      vendeursList.forEach(v => {
+        sel.innerHTML += `<option value="${v.id}">${v.prenom} ${v.nom}</option>`;
+      });
+    }
+
+    function updateSolde() {
+      const id = document.getElementById('v-vendeur').value;
+      const info = document.getElementById('solde-info');
+      if (!id) { info.style.display = 'none'; return; }
+      const bilan = bilanVendeurs.find(b => b.vendeur_id === id);
+      if (!bilan) { info.style.display = 'none'; return; }
+      const du = bilan.montant_du || 0;
+      const verse = bilan.verse_a_tresoriere || 0;
+      const reste = Math.max(0, du - verse);
+      document.getElementById('si-du').textContent = fmtMoney(du);
+      document.getElementById('si-verse').textContent = fmtMoney(verse);
+      document.getElementById('si-reste').textContent = fmtMoney(reste);
+      info.style.display = 'block';
+    }
+
+    // UTILS
+    function fmtMoney(n) { return (n || 0).toLocaleString('fr-FR') + ' F'; }
+    function fmtDate(d) { return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+    function fmtDateShort(d) { return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }); }
+    function showToast(msg, type = 'success') {
+      const t = document.getElementById('toast');
+      if (!t) return;
+      t.textContent = msg; t.className = `toast ${type} show`;
+      setTimeout(() => t.classList.remove('show'), 3500);
+    }
+
+    // NAVIGATION
+    function toggleSidebar() {
+      document.body.classList.toggle('sidebar-hidden');
+    }
+    window.toggleSidebar = toggleSidebar;
+
+    function showView(name, btn) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      const target = document.getElementById(`view-${name}`);
+      if (target) target.classList.add('active');
+      if (btn) btn.classList.add('active');
+    }
+
+    async function enregistrerVersement() {
+      const vendeurId = document.getElementById('v-vendeur').value;
+      const montant = parseInt(document.getElementById('v-montant').value);
+      const note = document.getElementById('v-note').value.trim();
+      if (!vendeurId || !montant || montant <= 0) {
+        showToast('⚠️ Remplissez tous les champs obligatoires.', 'error'); return;
+      }
+      const btn = document.getElementById('btn-verser');
+      btn.disabled = true; btn.textContent = '⏳...';
+      try {
+        await sb.from('versements_caisse').insert({
+          vendeur_id: vendeurId, montant,
+          tresoriere_id: currentUser.uid,
+          note: note || null,
+        });
+        showToast(`✅ Versement de ${fmtMoney(montant)} enregistré !`, 'success');
+        document.getElementById('v-vendeur').value = '';
+        document.getElementById('v-montant').value = '';
+        document.getElementById('v-note').value = '';
+        document.getElementById('solde-info').style.display = 'none';
+        await chargerDonnees();
+      } catch (e) {
+        UI.notify('❌ Erreur : ' + (e.message || "Action échouée"), 'error');
+      }
+      btn.disabled = false; btn.innerHTML = '💵 Enregistrer le versement';
+    }
+
+    function renderHistorique(data) {
+      const tbody = document.getElementById('tbody-historique');
+      if (!data.length) {
+        tbody.innerHTML = `<tr><td colspan="7" style="padding: 40px; text-align: center; color: var(--text-muted);">Aucun versement enregistré</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = data.map(v => `
+        <tr style="border-bottom: 1px solid var(--border-gray); ${v.statut === 'annule' ? 'opacity: 0.5;' : ''}">
+          <td style="padding: 20px; font-size: 14px; color: var(--text-muted); ${v.statut === 'annule' ? 'text-decoration: line-through;' : ''}">${fmtDate(v.created_at)}</td>
+          <td style="padding: 20px; font-weight: 600; ${v.statut === 'annule' ? 'text-decoration: line-through;' : ''}">${v.vendeur ? v.vendeur.prenom + ' ' + v.vendeur.nom : '—'}</td>
+          <td style="padding: 20px;"><strong style="color: ${v.statut === 'annule' ? 'var(--text-muted)' : 'var(--accent-green)'}; font-size: 15px; ${v.statut === 'annule' ? 'text-decoration: line-through;' : ''}">${fmtMoney(v.montant)}</strong></td>
+          <td style="padding: 20px; font-size: 14px; color: var(--text-muted);">${v.note || '—'}</td>
+          <td style="padding: 20px; font-size: 14px; color: var(--text-muted);">${v.tres ? v.tres.prenom + ' ' + v.tres.nom : '—'}</td>
+          <td style="padding: 20px; font-size: 14px;">
+            <span style="padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; ${v.statut === 'annule' ? 'background: rgba(255, 0, 0, 0.1); color: #ff5252;' : 'background: rgba(0, 230, 118, 0.1); color: var(--accent-green);'}">
+              ${v.statut === 'annule' ? 'Annulé' : 'Valide'}
+            </span>
+          </td>
+          <td style="padding: 20px; text-align: right;">
+            ${v.statut === 'valide' ? `<button onclick="annulerVersement('${v.id}')" style="background: rgba(255, 0, 0, 0.1); color: #ff5252; border: 1px solid #ff5252; padding: 6px 16px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; transition: var(--transition);" onmouseover="this.style.background='#ff5252'; this.style.color='white'" onmouseout="this.style.background='rgba(255, 0, 0, 0.1)'; this.style.color='#ff5252'">✖ Annuler</button>` : '—'}
+          </td>
+        </tr>`).join('');
+    }
+
+    async function annulerVersement(id) {
+      if (!confirm("Voulez-vous vraiment annuler ce versement ? Cette action est irréversible (le solde sera mis à jour).")) return;
+      try {
+        const { error } = await sb.from('versements_caisse').update({ statut: 'annule' }).eq('id', id);
+        if (error) throw error;
+        showToast('✅ Versement annulé avec succès.', 'success');
+        await chargerDonnees();
+      } catch (err) {
+        UI.notify("❌ Erreur lors de l'annulation", "error");
+        console.error(err);
+      }
+    }
+
+    // Expose
+    window.showView = showView;
+    window.logout = () => Auth.logout();
+    window.showToast = (m, t) => UI.notify(m, t === 'error' ? 'error' : 'success');
+    window.updateSolde = updateSolde;
+    window.enregistrerVersement = enregistrerVersement;
+    window.annulerVersement = annulerVersement;
+  </script>
+</body>
+
+</html>

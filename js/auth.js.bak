@@ -1,0 +1,74 @@
+import CONFIG from './config.js';
+
+// Initialize Supabase Client
+const { createClient } = window.supabase;
+export const supabase = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+
+// Auth Middleware & Helpers
+export const Auth = {
+    async getSession() {
+        const { data: { session } } = await supabase.auth.getSession();
+        return session;
+    },
+
+    async requireAuth(role = null) {
+        const session = await this.getSession();
+        if (!session) {
+            window.location.href = 'login.html';
+            return null;
+        }
+
+        const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+        let roleIsValid = false;
+        if (!role) {
+            roleIsValid = true;
+        } else if (Array.isArray(role)) {
+            roleIsValid = role.includes(profile?.role);
+        } else {
+            roleIsValid = profile?.role === role;
+        }
+
+        if (error || !profile || !roleIsValid) {
+            console.error("Access denied or profile error");
+            await this.logout();
+            return null;
+        }
+
+        return { session, profile };
+    },
+
+    async logout() {
+        await supabase.auth.signOut();
+        window.location.href = 'login.html';
+    }
+};
+
+// UI Helpers
+export const UI = {
+    notify(message, type = 'success') {
+        let container = document.getElementById('notification-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'notification-container';
+            document.body.appendChild(container);
+        }
+
+        const note = document.createElement('div');
+        const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+        note.className = `notification ${type} fade-in`;
+        note.innerHTML = `<span class="notification-icon">${icon}</span> <span class="notification-msg">${message}</span>`;
+        container.appendChild(note);
+
+        // Auto-remove
+        setTimeout(() => {
+            note.style.opacity = '0';
+            note.style.transform = 'translateX(20px)';
+            setTimeout(() => note.remove(), 400);
+        }, 5000);
+    }
+};

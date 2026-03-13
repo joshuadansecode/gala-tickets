@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GalaTickets — Vendeur</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;700&display=swap"
+    rel="stylesheet">
+  <script src="lib/supabase.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Base styles are now in style.css. Keeping only page-specific overrides if any. */
+  </style>
+</head>
+
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar"
+    style="background: var(--bg-pure); border-right: 1px solid var(--border-gray); width: 280px; z-index: 200;">
+    <div class="sidebar-logo" style="padding: 40px 24px; position: relative;">
+      <div class="sidebar-logo-title" style="font-size: 26px; font-weight: 900; letter-spacing: -0.05em;">Gala<span
+          style="color: grey; opacity: 0.5;">Tickets</span></div>
+      <div class="sidebar-logo-sub" style="font-size: 11px; opacity: 0.4; letter-spacing: 0.1em;">SELLER DASHBOARD</div>
+      <button onclick="toggleSidebar()"
+        style="position: absolute; right: 12px; top: 32px; background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer;">
+        ◀
+      </button>
+    </div>
+
+    <div class="sidebar-user" style="padding: 0 24px 32px; border-bottom: none;">
+      <div
+        style="background: var(--bg-card-light); padding: 16px; border-radius: 20px; border: 1px solid var(--border-gray); display: flex; align-items: center; gap: 12px; width: 100%;">
+        <div class="user-avatar" id="userInitials"
+          style="width: 40px; height: 40px; border-radius: 12px; background: var(--accent-glow); color: white; border: none; font-size: 14px;">
+          --</div>
+        <div class="user-info">
+          <div class="user-name" id="userName" style="font-size: 14px; font-weight: 700;">Chargement...</div>
+          <div class="user-role" style="font-size: 10px; opacity: 0.5;">VENDEUR</div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="nav" style="padding: 0 16px;">
+      <button class="nav-item active" onclick="showView('dashboard', this)" style="margin-bottom: 8px;">
+        <span class="nav-icon">📊</span> Tableau de bord
+      </button>
+      <button class="nav-item" onclick="showView('nouveau', this)" style="margin-bottom: 8px;">
+        <span class="nav-icon">➕</span> Nouveau ticket
+      </button>
+      <button class="nav-item" onclick="showView('versement', this)" style="margin-bottom: 8px;">
+        <span class="nav-icon">💵</span> Versement
+      </button>
+      <button class="nav-item" onclick="showView('mesventes', this)" style="margin-bottom: 8px;">
+        <span class="nav-icon">👤</span> Mes ventes
+      </button>
+      <button class="nav-item" onclick="showView('liste', this)" style="margin-bottom: 8px; opacity: 0.6;">
+        <span class="nav-icon">📋</span> Liste globale
+      </button>
+    </nav>
+
+    <div class="sidebar-bottom" style="border-top: none; padding: 24px 16px;">
+      <button class="btn-logout" onclick="logout()"
+        style="background: var(--bg-card-light); border: 1px solid var(--border-gray); color: var(--text-muted); border-radius: 16px;">
+        <span class="nav-icon">🚪</span> Déconnexion
+      </button>
+    </div>
+  </aside>
+
+  <button class="sidebar-toggle" onclick="toggleSidebar()">
+    <span>☰</span>
+  </button>
+
+  <!-- MAIN -->
+  <main class="main-content">
+
+    <!-- ── DASHBOARD ── -->
+    <div class="view active" id="view-dashboard">
+      <div class="page-header" style="margin-bottom: 40px;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div id="userAvatarSmall"
+            style="width: 48px; height: 48px; border-radius: 12px; background: var(--bg-card-light); border: 1px solid var(--border-gray); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; color: var(--text-primary);">
+            ..</div>
+          <div>
+            <div class="page-title" style="font-size: 24px;">Bonjour, <span id="greetName">...</span></div>
+            <div class="page-sub" id="dateLabel" style="font-size: 13px; color: var(--text-muted);">...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Wallet Card -->
+      <div class="wallet-card"
+        style="background: var(--bg-card); border: 1px solid transparent; border-image: var(--accent-glow) 1; border-radius: var(--radius-lg); padding: 32px; margin-bottom: 32px; position: relative; overflow: hidden; box-shadow: 0 20px 40px rgba(255, 0, 107, 0.15); border-image-source: var(--accent-glow); border: 1px solid #333; border-radius: 32px;">
+        <div
+          style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: var(--accent-glow); filter: blur(60px); opacity: 0.1;">
+        </div>
+        <div class="stat-label" style="text-transform: none; font-size: 14px; opacity: 0.7;">Solde des ventes</div>
+        <div class="stat-value" id="stat-mes-encaisse" style="font-size: 42px; margin: 12px 0 20px;">0 FCFA</div>
+        <div style="display: flex; gap: 24px; align-items: center;">
+          <div>
+            <div class="stat-label" style="font-size: 11px; opacity: 0.5;">Tickets vendus</div>
+            <div id="stat-mes-tickets" style="font-size: 16px; font-weight: 700;">0</div>
+          </div>
+          <div style="width: 1px; height: 24px; background: var(--border-gray);"></div>
+          <div>
+            <div class="stat-label" style="font-size: 11px; opacity: 0.5;">Progression</div>
+            <div style="font-size: 16px; font-weight: 700; color: var(--accent-green);">+12%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions Grid -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 40px;">
+        <button class="btn btn-primary" onclick="showView('nouveau', this)"
+          style="height: 64px; border-radius: 20px; font-size: 16px;">
+          <span style="font-size: 20px;">➕</span> Vendre Ticket
+        </button>
+        <button class="btn" onclick="showView('versement', this)"
+          style="height: 64px; border-radius: 20px; font-size: 16px; background: var(--bg-card-light); border: 1px solid var(--border-gray); color: white;">
+          <span style="font-size: 20px;">💵</span> Versement
+        </button>
+      </div>
+
+      <!-- Dernières Ventes -->
+      <div class="section-header"
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="font-size: 20px; font-weight: 700;">Dernières Ventes</h2>
+        <a href="#" onclick="showView('mesventes', document.querySelector('.nav-item:nth-child(5)'))"
+          style="color: var(--text-muted); font-size: 14px; text-decoration: none;">Voir tout</a>
+      </div>
+
+      <div id="tbody-dashboard" style="display: flex; flex-direction: column; gap: 12px;">
+        <!-- Records will be rendered here as cards -->
+      </div>
+    </div>
+
+    <!-- ── NOUVEAU TICKET ── -->
+    <div class="view" id="view-nouveau">
+      <div class="page-header" style="margin-bottom: 40px;">
+        <h1 class="page-title">Nouveau ticket</h1>
+        <p class="page-sub">Enregistrez un nouvel acheteur et son paiement initial.</p>
+      </div>
+
+      <div class="form-card"
+        style="background: var(--bg-card); border: 1px solid var(--border-gray); border-radius: var(--radius-lg); padding: 32px;">
+        <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+          <div class="field-group">
+            <label class="field-label"
+              style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Prénom *</label>
+            <input class="field-input" id="nt-prenom" placeholder="Ex: Jean">
+          </div>
+          <div class="field-group">
+            <label class="field-label"
+              style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Nom *</label>
+            <input class="field-input" id="nt-nom" placeholder="Ex: Kouassi">
+          </div>
+          <div class="field-group">
+            <label class="field-label"
+              style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Téléphone</label>
+            <input class="field-input" id="nt-tel" placeholder="Ex: 97 00 00 00" type="tel">
+          </div>
+          <div class="field-group">
+            <label class="field-label"
+              style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Filière /
+              Classe</label>
+            <input class="field-input" id="nt-filiere" placeholder="Ex: SSRI2">
+          </div>
+          <div class="field-group">
+            <label class="field-label"
+              style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Public *</label>
+            <select class="field-select" id="nt-public" onchange="updateTypes()"
+              style="width: 100%; background: var(--bg-card-light); border: 1px solid var(--border-gray); color: white; padding: 16px; border-radius: var(--radius-sm); outline: none;">
+              <option value="">-- Choisir --</option>
+              <option value="interne">Interne (Étudiants/Staff)</option>
+              <option value="administration">Administration / Invités</option>
+              <option value="externe">Externe</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label"
+              style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Type de ticket
+              *</label>
+            <select class="field-select" id="nt-type" onchange="updatePrix()"
+              style="width: 100%; background: var(--bg-card-light); border: 1px solid var(--border-gray); color: white; padding: 16px; border-radius: var(--radius-sm); outline: none;">
+              <option value="">-- Choisir d'abord le public --</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label"
+              style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Prix total</label>
+            <div class="prix-display" id="nt-prix"
+              style="font-size: 20px; font-weight: 800; color: var(--accent-blue);">— F CFA</div>
+          </div>
+          <div class="field-group">
+            <label class="field-label"
+              style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Versé aujourd'hui
+              *</label>
+            <input class="field-input" id="nt-verse" type="number" placeholder="0" oninput="updateReste()">
+          </div>
+          <div class="field-group full"
+            style="grid-column: span 2; background: rgba(255,255,255,0.03); padding: 20px; border-radius: 16px;">
+            <label class="field-label"
+              style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Reste à
+              payer</label>
+            <div class="reste-display" id="nt-reste"
+              style="font-size: 24px; font-weight: 800; color: var(--accent-amber);">— F CFA</div>
+          </div>
+        </div>
+        <div class="form-actions" style="margin-top: 32px; display: flex; gap: 16px;">
+          <button class="btn btn-primary" id="btn-enregistrer" onclick="enregistrerTicket()" style="flex: 1;">
+            🎟️ Confirmer l'enregistrement
+          </button>
+          <button class="btn btn-secondary" onclick="resetForm()">Réinitialiser</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── AJOUTER VERSEMENT ── -->
+    <div class="view" id="view-versement">
+      <div class="page-header" style="margin-bottom: 40px;">
+        <h1 class="page-title">Ajouter un versement</h1>
+        <p class="page-sub">Enregistrez un paiement complémentaire pour un ticket existant.</p>
+      </div>
+      <div class="form-card"
+        style="background: var(--bg-card); border: 1px solid var(--border-gray); border-radius: var(--radius-lg); padding: 32px;">
+        <div class="field-group" style="margin-bottom:32px">
+          <label class="field-label"
+            style="display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">Rechercher un
+            ticket (N°, Nom ou Prénom)</label>
+          <div style="position: relative;">
+            <span style="position: absolute; left: 20px; top: 50%; transform: translateY(-50%); opacity: 0.5;">🔍</span>
+            <input class="field-input" id="search-ticket" placeholder="Ex: Kouassi ou G012" oninput="rechercherTicket()"
+              style="padding-left: 56px;">
+          </div>
+        </div>
+        <div id="search-results" style="display: grid; grid-template-columns: 1fr; gap: 12px;"></div>
+      </div>
+    </div>
+
+    <!-- ── LISTES TABLES (DARK THEME) ── -->
+    <!-- (Simplified for now, focusing on consistent Dark background via style.css) -->
+
+    <!-- ── MES VENTES ── -->
+    <div class="view" id="view-mesventes">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Mes ventes</div>
+          <div class="page-sub">Uniquement les tickets que j'ai enregistrés</div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-head">
+          <div class="table-title">Mon historique</div>
+          <input class="search-box" placeholder="🔍 Filtrer..." id="filter-mes" oninput="filtrerMes()">
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>N°</th>
+              <th>Acheteur</th>
+              <th>Téléphone</th>
+              <th>Filière</th>
+              <th>Type</th>
+              <th>Prix</th>
+              <th>Payé</th>
+              <th>Reste</th>
+              <th>Statut</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-mes"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL VERSEMENT -->
+  <div class="modal-overlay" id="modal-versement" style="background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);">
+    <div class="modal"
+      style="background: var(--bg-card); border: 1px solid var(--border-gray); border-radius: var(--radius-lg); padding: 40px; width: 480px; box-shadow: 0 40px 100px rgba(0,0,0,0.8);">
+      <div class="modal-title" style="font-size: 24px; font-weight: 800; margin-bottom: 24px;">💵 Versement</div>
+      <div class="ticket-recap" id="modal-recap"
+        style="background: var(--bg-card-light); border-radius: 16px; padding: 20px; margin-bottom: 24px; border: 1px solid var(--border-gray);">
+      </div>
+      <div class="field-group" style="margin-bottom:16px">
+        <label class="field-label"
+          style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Montant à encaisser (F
+          CFA) *</label>
+        <input class="field-input" id="modal-montant" type="number" placeholder="0" min="1">
+      </div>
+      <div class="field-group" style="margin-bottom:32px">
+        <label class="field-label"
+          style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Note
+          (optionnel)</label>
+        <input class="field-input" id="modal-note" placeholder="Ex: 2ème versement">
+      </div>
+      <div class="form-actions" style="display: flex; gap: 12px;">
+        <button class="btn btn-primary" onclick="confirmerVersement()" style="flex: 1;">✅ Confirmer</button>
+        <button class="btn btn-secondary" onclick="fermerModal()">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <script type="module">
+    import { supabase, Auth, UI } from './js/auth.js';
+
+    window.supabase = supabase;
+    window.UI = UI;
+    const sb = supabase;
+
+    // Existing logic adapted
+    const TICKETS_CONFIG = {
+      interne: [{ v: 'gold', l: 'Gold — 10 000 F' }, { v: 'platinum', l: 'Platinum — 12 000 F' }, { v: 'diamond', l: 'Diamond — 15 000 F' }],
+      administration: [{ v: 'royal', l: 'Royal — 25 000 F' }],
+      externe: [{ v: 'gold', l: 'Gold — 13 000 F' }, { v: 'platinum', l: 'Platinum — 15 000 F' }, { v: 'diamond', l: 'Diamond — 20 000 F' }],
+    };
+    const PRIX = {
+      interne: { gold: 10000, platinum: 12000, diamond: 15000 },
+      administration: { royal: 25000 },
+      externe: { gold: 13000, platinum: 15000, diamond: 20000 }
+    };
+    const BADGE = {
+      gold: 'badge-gold', platinum: 'badge-platinum', diamond: 'badge-diamond',
+      royal: 'badge-royal'
+    };
+    const TYPE_LABEL = {
+      gold: 'Gold', platinum: 'Platinum', diamond: 'Diamond',
+      royal: 'Royal'
+    };
+
+    let currentUser = null;
+    let allTickets = [];
+    let mesTickets = [];
+    let selectedTicket = null;
+    let quotas = {};
+
+    // ── INIT ─────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+      const result = await Auth.requireAuth('vendeur');
+      if (!result) return;
+
+      const { session, profile } = result;
+      currentUser = { ...profile, uid: session.user.id };
+
+      // UI user
+      const initials = (profile.prenom[0] + profile.nom[0]).toUpperCase();
+      document.getElementById('userInitials').textContent = initials;
+      document.getElementById('userName').textContent = profile.prenom + ' ' + profile.nom;
+      document.getElementById('greetName').textContent = profile.prenom;
+
+      // Date
+      const now = new Date();
+      document.getElementById('dateLabel').textContent =
+        now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+      // Charger quotas
+      const { data: q } = await sb.from('quotas').select('*');
+      if (q) q.forEach(r => { quotas[r.type] = r; });
+
+      await chargerDonnees();
+    });
+
+    // ── CHARGEMENT DONNÉES ───────────────────────────────────────
+    async function chargerDonnees() {
+      // Tous les tickets
+      const { data: all } = await sb.from('tickets')
+        .select('*, vendeur:profiles(nom, prenom)')
+        .order('created_at', { ascending: true });
+      allTickets = all || [];
+
+      // Mes tickets
+      mesTickets = allTickets.filter(t => t.vendeur_id === currentUser.uid);
+
+      renderDashboard();
+      renderMes();
+    }
+
+    // ── DASHBOARD ────────────────────────────────────────────────
+    function renderDashboard() {
+      document.getElementById('stat-mes-tickets').textContent = mesTickets.length;
+      document.getElementById('stat-mes-encaisse').textContent = fmtMoney(mesTickets.reduce((s, t) => s + t.montant_paye, 0));
+
+      const tbody = document.getElementById('tbody-dashboard');
+      const recents = [...mesTickets].reverse().slice(0, 5);
+
+      if (!recents.length) {
+        tbody.innerHTML = `<div class="empty-state" style="padding: 40px; text-align: center; background: var(--bg-card); border-radius: 20px; border: 1px dashed var(--border-gray);"><div class="empty-icon" style="font-size: 32px; margin-bottom: 12px;">🎟️</div><div class="empty-text" style="color: var(--text-muted);">Aucune vente enregistrée</div></div>`;
+        return;
+      }
+
+      tbody.innerHTML = recents.map(t => `
+        <div class="transaction-card" onclick="ouvrirModal(${JSON.stringify(t).replace(/"/g, '&quot;')})" style="background: var(--bg-card); border: 1px solid var(--border-gray); border-radius: 24px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: var(--transition);">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="width: 48px; height: 48px; border-radius: 14px; background: var(--bg-card-light); display: flex; align-items: center; justify-content: center; font-weight: 700; color: white;">
+                    ${t.acheteur_prenom[0]}${t.acheteur_nom[0]}
+                </div>
+                <div>
+                    <div style="font-weight: 600; font-size: 15px;">${t.acheteur_prenom} ${t.acheteur_nom}</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">${fmtDate(t.created_at)} • ${t.numero}</div>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-weight: 800; font-size: 15px;">${fmtMoney(t.montant_paye)}</div>
+                <div style="font-size: 11px; margin-top: 4px;">
+                    <span class="badge" style="background: ${t.statut === 'solde' ? 'rgba(0, 230, 118, 0.1)' : 'rgba(255, 193, 7, 0.1)'}; color: ${t.statut === 'solde' ? 'var(--accent-green)' : 'var(--accent-amber)'}; padding: 2px 8px; border-radius: 6px;">
+                        ${t.statut === 'solde' ? 'Soldé' : 'Partiel'}
+                    </span>
+                </div>
+            </div>
+        </div>
+      `).join('');
+    }
+
+    // ── FIN LISTE GLOBALE ────────────────────────────────────────
+
+    // ── MES VENTES ───────────────────────────────────────────────
+    function renderMes(filtre = '') {
+      const tbody = document.getElementById('tbody-mes');
+      const data = filtre
+        ? mesTickets.filter(t =>
+          `${t.numero} ${t.acheteur_nom} ${t.acheteur_prenom}`.toLowerCase().includes(filtre.toLowerCase()))
+        : mesTickets;
+
+      if (!data.length) {
+        tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">👤</div><div class="empty-text">Aucune vente enregistrée</div></div></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = data.map(t => `
+    <tr onclick="ouvrirModal(${JSON.stringify(t).replace(/"/g, '&quot;')})">
+      <td><strong>${t.numero}</strong></td>
+      <td>${t.acheteur_prenom} ${t.acheteur_nom}</td>
+      <td class="td-gray">${t.telephone || '—'}</td>
+      <td class="td-gray">${t.filiere_classe || '—'}</td>
+      <td><span class="badge ${BADGE[t.type]}">${TYPE_LABEL[t.type]}</span></td>
+      <td>${fmtMoney(t.prix_total)}</td>
+      <td>${fmtMoney(t.montant_paye)}</td>
+      <td>${fmtMoney(t.prix_total - t.montant_paye)}</td>
+      <td><span class="badge ${t.statut === 'solde' ? 'badge-solde' : 'badge-partiel'}">${t.statut === 'solde' ? '✅ Soldé' : '🟡 Partiel'}</span></td>
+      <td class="td-gray">${fmtDate(t.created_at)}</td>
+    </tr>`).join('');
+    }
+    function filtrerMes() { renderMes(document.getElementById('filter-mes').value); }
+
+    // ── NOUVEAU TICKET ───────────────────────────────────────────
+    function updateTypes() {
+      const pub = document.getElementById('nt-public').value;
+      const sel = document.getElementById('nt-type');
+      sel.innerHTML = '<option value="">-- Choisir --</option>';
+      if (pub && TICKETS_CONFIG[pub]) {
+        TICKETS_CONFIG[pub].forEach(t => {
+          sel.innerHTML += `<option value="${t.v}">${t.l}</option>`;
+        });
+      }
+      document.getElementById('nt-prix').textContent = '— F CFA';
+      document.getElementById('nt-reste').textContent = '— F CFA';
+    }
+
+    function updatePrix() {
+      const pub = document.getElementById('nt-public').value;
+      const type = document.getElementById('nt-type').value;
+      const verse = parseInt(document.getElementById('nt-verse').value) || 0;
+      if (pub && type && PRIX[pub]) {
+        const prix = PRIX[pub][type];
+        document.getElementById('nt-prix').textContent = fmtMoney(prix);
+        document.getElementById('nt-reste').textContent = fmtMoney(Math.max(0, prix - verse));
+      } else {
+        document.getElementById('nt-prix').textContent = '— F CFA';
+        document.getElementById('nt-reste').textContent = '— F CFA';
+      }
+    }
+
+    function updateReste() {
+      const pub = document.getElementById('nt-public').value;
+      const type = document.getElementById('nt-type').value;
+      const verse = parseInt(document.getElementById('nt-verse').value) || 0;
+      if (pub && type && PRIX[pub]) {
+        const prix = PRIX[pub][type];
+        const reste = Math.max(0, prix - verse);
+        document.getElementById('nt-reste').textContent = fmtMoney(reste);
+      }
+    }
+
+    async function enregistrerTicket() {
+      const prenom = document.getElementById('nt-prenom').value.trim();
+      const nom = document.getElementById('nt-nom').value.trim();
+      const tel = document.getElementById('nt-tel').value.trim();
+      const filiere = document.getElementById('nt-filiere').value.trim();
+      const pub = document.getElementById('nt-public').value;
+      const type = document.getElementById('nt-type').value;
+      const verse = parseInt(document.getElementById('nt-verse').value) || 0;
+
+      if (!prenom || !nom || !pub || !type || verse <= 0) {
+        showToast('⚠️ Veuillez remplir tous les champs obligatoires.', 'error'); return;
+      }
+
+      const btn = document.getElementById('btn-enregistrer');
+      btn.disabled = true; btn.textContent = '⏳ Enregistrement...';
+
+      try {
+        // Générer le numéro
+        const { data: numData } = await sb.rpc('generate_ticket_numero', { ticket_type: type });
+        const numero = numData;
+        const prix = PRIX[pub][type];
+
+        // Insérer ticket
+        const { data: ticket, error: errTicket } = await sb.from('tickets').insert({
+          numero,
+          type,
+          prix_total: prix,
+          acheteur_nom: nom,
+          acheteur_prenom: prenom,
+          telephone: tel || null,
+          filiere_classe: filiere || null,
+          public_cible: pub,
+          montant_paye: verse,
+          statut: verse >= prix ? 'solde' : 'partiel',
+          vendeur_id: currentUser.uid,
+        }).select().single();
+
+        if (errTicket) throw errTicket;
+
+        // Insérer versement initial
+        await sb.from('versements_achat').insert({
+          ticket_id: ticket.id,
+          montant: verse,
+          vendeur_id: currentUser.uid,
+          note: 'Versement initial',
+        });
+
+        UI.notify('✅ Ticket enregistré avec succès !', 'success');
+        resetForm();
+        await chargerDonnees();
+
+      } catch (e) {
+        console.error(e);
+        UI.notify('❌ Erreur : ' + (e.message || "Action échouée"), 'error');
+      }
+
+      btn.disabled = false; btn.innerHTML = '🎟️ Enregistrer le ticket';
+    }
+
+    function resetForm() {
+      ['nt-prenom', 'nt-nom', 'nt-tel', 'nt-filiere', 'nt-verse'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      document.getElementById('nt-public').value = '';
+      document.getElementById('nt-type').innerHTML = '<option value="">-- Choisir d\'abord le public --</option>';
+      document.getElementById('nt-prix').textContent = '— F CFA';
+      document.getElementById('nt-reste').textContent = '— F CFA';
+    }
+
+    // ── RECHERCHE TICKET (versement) ─────────────────────────────
+    function rechercherTicket() {
+      const q = document.getElementById('search-ticket').value.toLowerCase().trim();
+      const div = document.getElementById('search-results');
+      if (!q) { div.innerHTML = ''; return; }
+
+      const results = allTickets.filter(t =>
+        t.acheteur_nom.toLowerCase().includes(q) ||
+        t.acheteur_prenom.toLowerCase().includes(q) ||
+        t.numero.toLowerCase().includes(q)
+      );
+
+      if (!results.length) {
+        div.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">Aucun ticket trouvé</div></div>`;
+        return;
+      }
+
+      div.innerHTML = results.map(t => {
+        const reste = t.prix_total - t.montant_paye;
+        if (t.statut === 'solde') return `
+      <div style="padding:14px;border:1px solid rgba(255,255,255,0.06);border-radius:10px;margin-bottom:10px;opacity:0.5">
+        <strong>${t.numero}</strong> — ${t.acheteur_prenom} ${t.acheteur_nom}
+        <span class="badge badge-solde" style="margin-left:8px">✅ Soldé</span>
+      </div>`;
+        return `
+      <div style="padding:14px;border:1px solid rgba(201,168,76,0.15);border-radius:10px;margin-bottom:10px;cursor:pointer;transition:background 0.2s"
+        onclick="ouvrirModal(${JSON.stringify(t).replace(/"/g, '&quot;')})"
+        onmouseover="this.style.background='rgba(201,168,76,0.05)'"
+        onmouseout="this.style.background=''">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <strong style="color:var(--gold-light)">${t.numero}</strong>
+            <span style="color:var(--white);margin-left:10px">${t.acheteur_prenom} ${t.acheteur_nom}</span>
+            <span class="badge ${BADGE[t.type]}" style="margin-left:8px">${TYPE_LABEL[t.type]}</span>
+          </div>
+          <div style="text-align:right">
+            <div style="color:var(--orange);font-size:13px">Reste : ${fmtMoney(reste)}</div>
+            <span class="badge badge-partiel">🟡 Partiel</span>
+          </div>
+        </div>
+      </div>`;
+      }).join('');
+    }
+
+    // ── MODAL VERSEMENT ──────────────────────────────────────────
+    function ouvrirModal(ticket) {
+      if (!ticket) return;
+      selectedTicket = ticket;
+      const reste = ticket.prix_total - ticket.montant_paye;
+      document.getElementById('modal-recap').innerHTML = `
+    <div class="recap-row"><div class="recap-label">Ticket</div><div class="recap-val gold">${ticket.numero}</div></div>
+    <div class="recap-row"><div class="recap-label">Acheteur</div><div class="recap-val">${ticket.acheteur_prenom} ${ticket.acheteur_nom}</div></div>
+    <div class="recap-row"><div class="recap-label">Type</div><div class="recap-val">${TYPE_LABEL[ticket.type]}</div></div>
+    <div class="recap-row"><div class="recap-label">Prix total</div><div class="recap-val">${fmtMoney(ticket.prix_total)}</div></div>
+    <div class="recap-row"><div class="recap-label">Déjà payé</div><div class="recap-val gold">${fmtMoney(ticket.montant_paye)}</div></div>
+    <div class="recap-row"><div class="recap-label">Reste dû</div><div class="recap-val red">${fmtMoney(reste)}</div></div>
+  `;
+      document.getElementById('modal-montant').value = '';
+      document.getElementById('modal-note').value = '';
+      document.getElementById('modal-versement').classList.add('show');
+    }
+    window.ouvrirModal = ouvrirModal;
+
+    // UTILS
+    function fmtMoney(n) { return (n || 0).toLocaleString('fr-FR') + ' F'; }
+    function fmtDate(d) { return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+    function fmtDateShort(d) { return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }); }
+    function showToast(msg, type = 'success') {
+      const t = document.getElementById('toast');
+      if (!t) return;
+      t.textContent = msg; t.className = `toast ${type} show`;
+      setTimeout(() => t.classList.remove('show'), 3500);
+    }
+
+    // NAVIGATION
+    function toggleSidebar() {
+      document.body.classList.toggle('sidebar-hidden');
+    }
+    window.toggleSidebar = toggleSidebar;
+
+    function showView(name, btn) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      const target = document.getElementById(`view-${name}`);
+      if (target) target.classList.add('active');
+      if (btn) btn.classList.add('active');
+    }
+
+    function fermerModal() {
+      document.getElementById('modal-versement').classList.remove('show');
+      selectedTicket = null;
+    }
+
+    async function confirmerVersement() {
+      const montant = parseInt(document.getElementById('modal-montant').value);
+      const note = document.getElementById('modal-note').value.trim();
+
+      if (!montant || montant <= 0) {
+        showToast('⚠️ Montant invalide.', 'error'); return;
+      }
+
+      const reste = selectedTicket.prix_total - selectedTicket.montant_paye;
+      if (montant > reste) {
+        showToast(`⚠️ Le montant dépasse le reste dû (${fmtMoney(reste)}).`, 'error'); return;
+      }
+
+      try {
+        await sb.from('versements_achat').insert({
+          ticket_id: selectedTicket.id,
+          montant,
+          vendeur_id: currentUser.uid,
+          note: note || null,
+        });
+
+        showToast(`✅ Versement de ${fmtMoney(montant)} enregistré !`, 'success');
+        fermerModal();
+        await chargerDonnees();
+        document.getElementById('search-ticket').value = '';
+        document.getElementById('search-results').innerHTML = '';
+
+      } catch (e) {
+        showToast('❌ Erreur lors de l\'enregistrement.', 'error');
+      }
+    }
+
+    // Expose to window for HTML onclicks
+    window.showView = showView;
+    window.logout = () => Auth.logout();
+    window.showToast = (m, t) => UI.notify(m, t === 'error' ? 'error' : 'success');
+    window.enregistrerTicket = enregistrerTicket;
+    window.resetForm = resetForm;
+    window.updateTypes = updateTypes;
+    window.updatePrix = updatePrix;
+    window.updateReste = updateReste;
+    window.rechercherTicket = rechercherTicket;
+    window.filtrerMes = filtrerMes;
+    window.ouvrirModal = ouvrirModal;
+    window.fermerModal = fermerModal;
+    window.confirmerVersement = confirmerVersement;
+  </script>
+</body>
+
+</html>

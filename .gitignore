@@ -1,0 +1,10 @@
+.gemini/
+brain/
+.cortex/
+.vscode/
+node_modules/
+*.webp
+*.png
+*.jpg
+temp/
+/tmp/

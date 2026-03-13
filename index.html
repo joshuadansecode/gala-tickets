@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GalaTickets — Redirection</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            background: #08111f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: sans-serif;
+        }
+
+        .loader {
+            color: #c9a84c;
+            font-size: 18px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="loader">Chargement...</div>
+    <script type="module">
+        import { Auth, supabase } from './js/auth.js';
+
+        async function init() {
+            const session = await Auth.getSession();
+            if (!session) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', session.user.id)
+                .single();
+
+            if (profile) {
+                const roles = {
+                    'admin': 'admin.html',
+                    'vendeur': 'vendeur.html',
+                    'tresoriere': 'tresoriere.html',
+                    'direction': 'direction.html',
+                    'observateur': 'direction.html'
+                };
+                window.location.href = roles[profile.role] || 'login.html';
+            } else {
+                window.location.href = 'login.html';
+            }
+        }
+        init();
+    </script>
+</body>
+
+</html>
