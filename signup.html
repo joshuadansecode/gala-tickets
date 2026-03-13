@@ -71,7 +71,7 @@
       const nom = document.getElementById('nom').value.trim();
       const prenom = document.getElementById('prenom').value.trim();
 
-      // 1. Inscription Auth
+      // 1. Inscription Auth (Le profil sera créé automatiquement par le trigger SQL côté Supabase)
       const { data, error: authError } = await supabase.auth.signUp({ 
         email, 
         password,
@@ -87,44 +87,9 @@
         return;
       }
 
-      const user = data.user;
-      if (!user) {
-        UI.notify("Une erreur est survenue lors de l'inscription.", "error");
-        signupBtn.disabled = false;
-        return;
-      }
-
-      // 2. Vérifier si c'est le premier utilisateur pour lui donner le rôle admin
-      const { count } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
-
-      const isFirstUser = (count === 0);
-      const role = isFirstUser ? 'admin' : 'vendeur';
-      const actif = isFirstUser; // Seul le premier admin est actif d'office
-
-      // 3. Création du profil
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([{
-          id: user.id,
-          nom,
-          prenom,
-          role,
-          email,
-          actif: actif
-        }]);
-
-      if (profileError) {
-        console.error("Profile error:", profileError);
-        UI.notify("Compte créé mais erreur de profil. Contactez l'admin.", "warning");
-      } else {
-        const msg = isFirstUser 
-            ? "Compte Administrateur créé avec succès !" 
-            : "Inscription réussie ! Votre compte est en attente de validation par l'administrateur.";
-        UI.notify(msg, isFirstUser ? "success" : "warning");
-        setTimeout(() => window.location.href = 'login.html', 3000);
-      }
+      // 2. Succès
+      UI.notify("Inscription réussie ! Redirection...", "success");
+      setTimeout(() => window.location.href = 'login.html', 3000);
     });
 
   </script>
