@@ -290,7 +290,7 @@
       bilanVendeurs = bilan || [];
 
       // Vendeurs liste pour select
-      const { data: vends } = await sb.from('profiles').select('id,nom,prenom').eq('role', 'vendeur').eq('actif', true);
+      const { data: vends } = await sb.from('profiles').select('id,nom,prenom,role').eq('actif', true);
       vendeursList = vends || [];
 
       // Historique versements
@@ -368,7 +368,7 @@
       const sel = document.getElementById('v-vendeur');
       sel.innerHTML = '<option value="">-- Sélectionner un vendeur --</option>';
       vendeursList.forEach(v => {
-        sel.innerHTML += `<option value="${v.id}">${v.prenom} ${v.nom}</option>`;
+        sel.innerHTML += `<option value="${v.id}">${v.prenom} ${v.nom} (${v.role})</option>`;
       });
     }
 

@@ -886,10 +886,10 @@
 
     // RETRAITS
     function renderRetraits() {
-      const vends = allProfiles.filter(p => p.role === 'vendeur' && p.actif);
+      const vends = allProfiles.filter(p => p.actif);
       const sel = document.getElementById('r-vendeur');
       sel.innerHTML = '<option value="">-- Sélectionner --</option>';
-      vends.forEach(v => { sel.innerHTML += `<option value="${v.id}">${v.prenom} ${v.nom}</option>`; });
+      vends.forEach(v => { sel.innerHTML += `<option value="${v.id}">${v.prenom} ${v.nom} (${v.role})</option>`; });
 
       const tbody = document.getElementById('tbody-retraits');
       tbody.innerHTML = allRetraits.map(r => `
