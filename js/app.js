@@ -190,11 +190,41 @@ const App = {
     },
 
     showAddPaymentModal(ticketId) {
-        // We'll implement this simple inline or as a separate form
-        const amount = prompt("Entrez le montant du versement (F) :");
-        if (amount && !isNaN(amount)) {
-            this.handlePaymentSubmit(ticketId, parseInt(amount));
+        let overlay = document.getElementById('modal-add-payment');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.id = 'modal-add-payment';
+            overlay.innerHTML = `
+                <div class="modal" style="max-width: 400px; padding: 24px;">
+                  <div class="modal-title" style="font-size: 1.25rem; font-weight: 800; color: white;">💰 Versement partiel</div>
+                  <div class="form-group" style="margin-top: 16px; text-align: left;">
+                    <label style="color: var(--text-muted); font-size: 11px; font-weight: 700; text-transform: uppercase;">Montant du versement (F)</label>
+                    <input type="number" id="input-add-payment" class="input" style="width: 100%; margin-top: 8px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-gray); background: var(--bg-card-light); color: white;" min="1" placeholder="Ex: 5000">
+                  </div>
+                  <div style="display:flex;gap:8px;margin-top:24px">
+                    <button class="btn btn-gold" style="flex:1" id="btn-save-payment">Enregistrer</button>
+                    <button class="btn btn-outline" style="flex:1" onclick="document.getElementById('modal-add-payment').classList.remove('show')">Annuler</button>
+                  </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
         }
+        
+        const input = document.getElementById('input-add-payment');
+        input.value = '';
+        overlay.classList.add('show');
+        
+        const saveBtn = document.getElementById('btn-save-payment');
+        saveBtn.onclick = () => {
+            const amount = parseInt(input.value);
+            if (amount && !isNaN(amount)) {
+                overlay.classList.remove('show');
+                this.handlePaymentSubmit(ticketId, amount);
+            } else {
+                this.showNotification("Montant invalide", "error");
+            }
+        };
     },
 
     async handlePaymentSubmit(ticketId, amount) {

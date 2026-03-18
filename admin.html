@@ -572,6 +572,43 @@
     </div>
   </div>
 
+  <!-- MODAL EDIT ROLE -->
+  <div class="modal-overlay" id="modal-edit-role">
+    <div class="modal" style="max-width: 400px; padding: 24px;">
+      <div class="modal-title">⚙️ Modifier le rôle</div>
+      <div class="form-group" style="margin-top: 16px;">
+        <label style="color: var(--text-muted); font-size: 11px; font-weight: 700; text-transform: uppercase;">Nouveau Rôle</label>
+        <select id="select-edit-role" class="input" style="width: 100%; margin-top: 8px;">
+            <option value="admin">Admin</option>
+            <option value="tresoriere">Trésorière</option>
+            <option value="vendeur">Vendeur</option>
+            <option value="direction">Direction</option>
+            <option value="observateur">Observateur</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:24px">
+        <button class="btn btn-gold" style="flex:1" onclick="saveEditerRole()">Sauvegarder</button>
+        <button class="btn btn-outline" style="flex:1" onclick="fermerModal('modal-edit-role')">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EDIT QUOTA -->
+  <div class="modal-overlay" id="modal-edit-quota">
+    <div class="modal" style="max-width: 400px; padding: 24px;">
+      <div class="modal-title">🎟️ Modifier le Quota</div>
+      <div style="margin-top: 8px; color: var(--text-muted); font-size: 13px;" id="modal-edit-quota-desc"></div>
+      <div class="form-group" style="margin-top: 16px;">
+        <label style="color: var(--text-muted); font-size: 11px; font-weight: 700; text-transform: uppercase;">Nombre de places max</label>
+        <input type="number" id="input-edit-quota" class="input" style="width: 100%; margin-top: 8px;" min="0">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:24px">
+        <button class="btn btn-gold" style="flex:1" onclick="confirmSaveQuota()">Sauvegarder</button>
+        <button class="btn btn-outline" style="flex:1" onclick="fermerModal('modal-edit-quota')">Annuler</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script type="module">
@@ -593,6 +630,8 @@
     window.showView = showView;
     window.logout = logout;
     window.toggleSidebar = toggleSidebar;
+    window.saveEditerRole = saveEditerRole;
+    window.confirmSaveQuota = confirmSaveQuota;
 
     document.addEventListener('DOMContentLoaded', async () => {
       const result = await Auth.requireAuth('admin');
@@ -933,18 +972,21 @@
 
 
 
-    async function editerRole(id, currentRole) {
-      const roles = ['admin', 'tresoriere', 'vendeur', 'direction', 'observateur'];
-      let rolePrompt = prompt("Entrez le nouveau rôle de cet utilisateur (" + roles.join(", ") + ") :", currentRole);
-      if (!rolePrompt) return;
-      rolePrompt = rolePrompt.trim().toLowerCase();
-      if (!roles.includes(rolePrompt)) {
-        showToast("Rôle invalide.", "error"); return;
-      }
+    let currentEditRoleId = null;
+    function editerRole(id, currentRole) {
+      currentEditRoleId = id;
+      document.getElementById('select-edit-role').value = currentRole;
+      document.getElementById('modal-edit-role').classList.add('show');
+    }
+
+    async function saveEditerRole() {
+      const role = document.getElementById('select-edit-role').value;
+      if (!role) return;
       try {
-        const { error } = await sb.from('profiles').update({ role: rolePrompt }).eq('id', id);
+        const { error } = await sb.from('profiles').update({ role: role }).eq('id', currentEditRoleId);
         if (error) throw error;
         showToast("Rôle mis à jour !", "success");
+        fermerModal('modal-edit-role');
         await chargerTout();
       } catch (e) { UI.notify(e.message, 'error'); }
     }
@@ -1062,11 +1104,23 @@
       }).join('');
     }
 
-    async function saveQuota(type) {
-      const val = parseInt(document.getElementById(`q-${type}`).value);
+    let currentEditQuotaType = null;
+    function saveQuota(type) {
+      currentEditQuotaType = type;
+      const currentVal = parseInt(document.getElementById(`q-${type}`).value) || 0;
+      document.getElementById('input-edit-quota').value = currentVal;
+      document.getElementById('modal-edit-quota-desc').innerHTML = `Modification du quota pour la catégorie <strong style="color: ${COLORS[type]}">${LABEL[type]}</strong>`;
+      document.getElementById('modal-edit-quota').classList.add('show');
+    }
+
+    async function confirmSaveQuota() {
+      if (!currentEditQuotaType) return;
+      const type = currentEditQuotaType;
+      const val = parseInt(document.getElementById('input-edit-quota').value);
       if (isNaN(val) || val < 0) { showToast('⚠️ Valeur invalide.', 'error'); return; }
       await sb.from('quotas').update({ max_tickets: val, updated_at: new Date().toISOString() }).eq('type', type);
       showToast(`✅ Quota ${LABEL[type]} mis à jour!`, 'success');
+      fermerModal('modal-edit-quota');
       await chargerTout();
     }
 
