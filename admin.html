@@ -1017,54 +1017,28 @@
       if (pass.length < 6) { showToast('⚠️ Le mot de passe doit faire au moins 6 caractères.', 'error'); return; }
 
       try {
-        // Sauvegarder la session admin avant la création
-        const adminSessionRes = await sb.auth.getSession();
-        const adminSession = adminSessionRes.data.session;
-
-        // Créer l'utilisateur (peut déconnecter l'admin si l'auto-confirm est activé)
-        const { data, error } = await sb.auth.signUp({ email, password: pass });
-
-        // Restaurer immédiatement la session admin pour pouvoir insérer dans 'profiles'
-        if (adminSession) {
-             await sb.auth.setSession({
-                 access_token: adminSession.access_token,
-                 refresh_token: adminSession.refresh_token
-             });
-        }
-
-        if (error) {
-          if (error.status === 422) {
-            throw new Error("Validation échouée (422). Vérifiez que l'inscription est autorisée dans les paramètres Supabase Auth et que l'email n'existe pas déjà.");
-          }
-          throw error;
-        }
-
-        if (!data.user) throw new Error("Erreur inconnue lors de la création.");
-
-        // Insérer le profil (executé en tant qu'admin grâce à setSession)
-        const { error: profError } = await sb.from('profiles').insert({
-          id: data.user.id,
-          nom,
-          prenom,
-          email,
-          telephone: tel || null,
-          role
+        const { data, error } = await sb.rpc('admin_create_user', {
+          email_input: email,
+          password_input: pass,
+          nom_input: nom,
+          prenom_input: prenom,
+          role_input: role,
+          tel_input: tel || ''
         });
 
-        if (profError) throw profError;
+        if (error) {
+           console.error(error);
+           throw new Error(error.message || "Erreur serveur lors de la création.");
+        }
 
         UI.notify('✅ Compte créé avec succès !', 'success');
         ['nv-prenom', 'nv-nom', 'nv-email', 'nv-tel', 'nv-pass'].forEach(id => document.getElementById(id).value = '');
+        fermerModal('modal-create-user');
         await chargerTout();
 
       } catch (e) {
-        console.error(e);
-        const msg = e.message || "Erreur de création";
-        UI.notify('❌ ' + msg, 'error');
-
-        if (msg.includes('422')) {
-          alert("CONSEIL : Vérifiez dans votre tableau de bord Supabase :\n1. Authentication -> Settings -> Enable Signup est ACTIVÉ.\n2. Si 'Confirm Email' est activé, l'utilisateur devra valider son mail avant d'apparaître.");
-        }
+        console.error("Erreur RPC:", e);
+        UI.notify('❌ ' + (e.message || "Erreur de création"), 'error');
       }
     }
 
