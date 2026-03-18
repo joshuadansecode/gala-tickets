@@ -1017,19 +1017,33 @@
       if (pass.length < 6) { showToast('⚠️ Le mot de passe doit faire au moins 6 caractères.', 'error'); return; }
 
       try {
-        const { data, error } = await sb.rpc('admin_create_user', {
-          email_input: email,
-          password_input: pass,
-          nom_input: nom,
-          prenom_input: prenom,
-          role_input: role,
-          tel_input: tel || ''
+        // Créer un client Supabase "fantôme" qui ne touche PAS à la session Admin
+        const { createClient } = window.supabase;
+        const ghostClient = createClient(
+          'https://sykmncqdrmmoavixuxfw.supabase.co',
+          'sb_publishable_GYVcdhujxmHkzx8iKcyNXw_j6e_jueq',
+          { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } }
+        );
+
+        // Créer l'utilisateur via le client fantôme (isolé)
+        const { data, error } = await ghostClient.auth.signUp({
+          email,
+          password: pass,
+          options: { data: { prenom, nom, role } }
         });
 
-        if (error) {
-           console.error(error);
-           throw new Error(error.message || "Erreur serveur lors de la création.");
-        }
+        if (error) throw error;
+        if (!data.user) throw new Error("Erreur inconnue lors de la création.");
+
+        // Insérer le profil via le client Admin (qui lui garde sa session)
+        const { error: profError } = await sb.from('profiles').insert({
+          id: data.user.id,
+          nom, prenom, email,
+          telephone: tel || null,
+          role
+        });
+
+        if (profError) throw profError;
 
         UI.notify('✅ Compte créé avec succès !', 'success');
         ['nv-prenom', 'nv-nom', 'nv-email', 'nv-tel', 'nv-pass'].forEach(id => document.getElementById(id).value = '');
@@ -1037,7 +1051,7 @@
         await chargerTout();
 
       } catch (e) {
-        console.error("Erreur RPC:", e);
+        console.error("Erreur création compte:", e);
         UI.notify('❌ ' + (e.message || "Erreur de création"), 'error');
       }
     }
