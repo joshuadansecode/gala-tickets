@@ -1017,7 +1017,20 @@
       if (pass.length < 6) { showToast('⚠️ Le mot de passe doit faire au moins 6 caractères.', 'error'); return; }
 
       try {
+        // Sauvegarder la session admin avant la création
+        const adminSessionRes = await sb.auth.getSession();
+        const adminSession = adminSessionRes.data.session;
+
+        // Créer l'utilisateur (peut déconnecter l'admin si l'auto-confirm est activé)
         const { data, error } = await sb.auth.signUp({ email, password: pass });
+
+        // Restaurer immédiatement la session admin pour pouvoir insérer dans 'profiles'
+        if (adminSession) {
+             await sb.auth.setSession({
+                 access_token: adminSession.access_token,
+                 refresh_token: adminSession.refresh_token
+             });
+        }
 
         if (error) {
           if (error.status === 422) {
@@ -1028,7 +1041,7 @@
 
         if (!data.user) throw new Error("Erreur inconnue lors de la création.");
 
-        // Insérer le profil
+        // Insérer le profil (executé en tant qu'admin grâce à setSession)
         const { error: profError } = await sb.from('profiles').insert({
           id: data.user.id,
           nom,
