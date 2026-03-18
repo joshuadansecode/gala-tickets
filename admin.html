@@ -613,6 +613,8 @@
   <script type="module">
     import { supabase, Auth, UI } from './js/auth.js';
 
+    // Sauvegarder createClient avant d'écraser window.supabase avec le client
+    const { createClient } = window.supabase;
     window.supabase = supabase;
     window.UI = UI;
     const sb = supabase;
@@ -1018,7 +1020,6 @@
 
       try {
         // Créer un client Supabase "fantôme" qui ne touche PAS à la session Admin
-        const { createClient } = window.supabase;
         const ghostClient = createClient(
           'https://sykmncqdrmmoavixuxfw.supabase.co',
           'sb_publishable_GYVcdhujxmHkzx8iKcyNXw_j6e_jueq',
