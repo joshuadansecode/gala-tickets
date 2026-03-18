@@ -193,10 +193,10 @@ const App = {
         let overlay = document.getElementById('modal-add-payment');
         if (!overlay) {
             overlay = document.createElement('div');
-            overlay.className = 'modal-overlay';
+            overlay.className = 'modal';
             overlay.id = 'modal-add-payment';
             overlay.innerHTML = `
-                <div class="modal" style="max-width: 400px; padding: 24px;">
+                <div class="modal-content" style="max-width: 400px; padding: 24px; margin: auto;">
                   <div class="modal-title" style="font-size: 1.25rem; font-weight: 800; color: white;">💰 Versement partiel</div>
                   <div class="form-group" style="margin-top: 16px; text-align: left;">
                     <label style="color: var(--text-muted); font-size: 11px; font-weight: 700; text-transform: uppercase;">Montant du versement (F)</label>

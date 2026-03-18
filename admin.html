@@ -448,22 +448,21 @@
     </div>
 
     <!-- MODAL CREATE USER -->
-    <div class="modal-overlay" id="modal-create-user" style="background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);">
-      <div class="modal"
-        style="background: var(--bg-card); border: 1px solid var(--border-gray); border-radius: var(--radius-lg); padding: 40px; width: 600px;">
+    <div class="modal" id="modal-create-user">
+      <div class="modal-content" style="max-width: 600px; margin: auto;">
         <h2 style="font-size: 24px; font-weight: 800; margin-bottom: 24px;">Nouvel Utilisateur</h2>
         <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
           <div class="field-group">
             <label class="field-label">Prénom *</label>
-            <input class="field-input" id="nv-prenom" placeholder="Ex: Marc">
+            <input class="field-input" id="nv-prenom" placeholder="Ex: Jean">
           </div>
           <div class="field-group">
             <label class="field-label">Nom *</label>
-            <input class="field-input" id="nv-nom" placeholder="Ex: Kouame">
+            <input class="field-input" id="nv-nom" placeholder="Ex: Dupont">
           </div>
-          <div class="field-group full" style="grid-column: span 2;">
+          <div class="field-group">
             <label class="field-label">Email *</label>
-            <input class="field-input" id="nv-email" type="email" placeholder="email@exemple.com">
+            <input class="field-input" id="nv-email" type="email" placeholder="jean@test.com">
           </div>
           <div class="field-group">
             <label class="field-label">Téléphone</label>
@@ -478,7 +477,7 @@
               <option value="admin">Admin</option>
             </select>
           </div>
-          <div class="field-group full" style="grid-column: span 2;">
+          <div class="field-group">
             <label class="field-label">Mot de passe *</label>
             <input class="field-input" id="nv-pass" type="password" placeholder="••••••••">
           </div>
@@ -562,8 +561,8 @@
   </main>
 
   <!-- MODAL FICHE TICKET -->
-  <div class="modal-overlay" id="modal-ticket">
-    <div class="modal">
+  <div class="modal" id="modal-ticket">
+    <div class="modal-content">
       <div class="modal-title">🎟️ Fiche ticket</div>
       <div id="modal-ticket-content"></div>
       <div style="display:flex;gap:8px;margin-top:20px">
@@ -573,8 +572,8 @@
   </div>
 
   <!-- MODAL EDIT ROLE -->
-  <div class="modal-overlay" id="modal-edit-role">
-    <div class="modal" style="max-width: 400px; padding: 24px;">
+  <div class="modal" id="modal-edit-role">
+    <div class="modal-content" style="max-width: 400px; padding: 24px;">
       <div class="modal-title">⚙️ Modifier le rôle</div>
       <div class="form-group" style="margin-top: 16px;">
         <label style="color: var(--text-muted); font-size: 11px; font-weight: 700; text-transform: uppercase;">Nouveau Rôle</label>
@@ -594,8 +593,8 @@
   </div>
 
   <!-- MODAL EDIT QUOTA -->
-  <div class="modal-overlay" id="modal-edit-quota">
-    <div class="modal" style="max-width: 400px; padding: 24px;">
+  <div class="modal" id="modal-edit-quota">
+    <div class="modal-content" style="max-width: 400px; padding: 24px;">
       <div class="modal-title">🎟️ Modifier le Quota</div>
       <div style="margin-top: 8px; color: var(--text-muted); font-size: 13px;" id="modal-edit-quota-desc"></div>
       <div class="form-group" style="margin-top: 16px;">
