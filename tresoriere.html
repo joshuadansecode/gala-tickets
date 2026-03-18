@@ -72,8 +72,7 @@
 </head>
 
 <body>
-  <aside class="sidebar"
-    style="background: var(--bg-pure); border-right: 1px solid var(--border-gray); width: 280px; z-index: 200;">
+  <aside class="sidebar">
     <div class="sidebar-logo" style="padding: 40px 24px; position: relative;">
       <div class="sidebar-logo-title" style="font-size: 26px; font-weight: 900; letter-spacing: -0.05em;">Gala<span
           style="color: grey; opacity: 0.5;">Tickets</span></div>
@@ -131,8 +130,7 @@
         <p class="page-sub">Suivi global de la performance financière.</p>
       </div>
 
-      <div class="stats-grid"
-        style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 40px;">
+      <div class="stats-grid" style="margin-bottom: 40px;">
         <div class="stat-card">
           <div class="stat-label">Caisse Totale</div>
           <div class="stat-value" id="stat-total-caisse" style="color: var(--accent-green); font-size: 24px;">—</div>
@@ -161,7 +159,7 @@
       <div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
         <h2 style="font-size: 20px; font-weight: 700;">Bilan par vendeur</h2>
       </div>
-      <div class="vendeurs-grid" id="vendeurs-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+      <div class="responsive-grid" id="vendeurs-grid" style="gap: 20px;">
       </div>
     </div>
 
@@ -184,7 +182,7 @@
 
         <div id="solde-info"
           style="display:none; background: rgba(255,255,255,0.02); border-radius: 20px; padding: 24px; margin-bottom: 32px; border: 1px solid var(--border-gray);">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <div class="responsive-grid" style="gap: 20px;">
             <div>
               <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Total attendu</div>
               <div style="font-size: 20px; font-weight: 800; color: white;" id="si-du">—</div>
