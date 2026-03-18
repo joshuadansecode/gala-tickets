@@ -1036,15 +1036,8 @@
         if (error) throw error;
         if (!data.user) throw new Error("Erreur inconnue lors de la création.");
 
-        // Insérer le profil via le client Admin (qui lui garde sa session)
-        const { error: profError } = await sb.from('profiles').insert({
-          id: data.user.id,
-          nom, prenom, email,
-          telephone: tel || null,
-          role
-        });
-
-        if (profError) throw profError;
+        // Le profil est automatiquement créé par le trigger Supabase 'handle_new_user'
+        // qui récupère toutes les options metadata (prenom, nom, role, telephone)
 
         UI.notify('✅ Compte créé avec succès !', 'success');
         ['nv-prenom', 'nv-nom', 'nv-email', 'nv-tel', 'nv-pass'].forEach(id => document.getElementById(id).value = '');
