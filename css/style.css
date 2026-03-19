@@ -710,20 +710,24 @@ input:focus {
     }
 
     .stats-grid {
-        grid-template-columns: 1fr !important;
+        grid-template-columns: repeat(2, 1fr) !important;
         gap: 12px !important;
     }
 
     .stat-card {
-        padding: 20px !important;
+        padding: 16px !important;
     }
 
     .stat-value {
-        font-size: 32px !important;
+        font-size: 24px !important;
+    }
+
+    .stat-label {
+        font-size: 10px !important;
     }
 
     .types-grid {
-        grid-template-columns: 1fr !important;
+        grid-template-columns: repeat(2, 1fr) !important;
         gap: 12px !important;
     }
 
@@ -732,22 +736,81 @@ input:focus {
         gap: 16px !important;
     }
 
+    /* ── TABLE MOBILE SCROLLABLE ── */
     .table-wrap {
         border-radius: 12px !important;
-        margin: 0 -16px;
-        width: calc(100% + 32px);
-        border-left: none;
-        border-right: none;
-        overflow-x: auto;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        position: relative;
     }
 
-    table {
-        min-width: 600px;
+    .table-wrap table {
+        min-width: 700px;
+    }
+
+    /* Hint scroll indicator */
+    .table-wrap::after {
+        content: "← →";
+        position: sticky;
+        left: 0;
+        display: block;
+        text-align: center;
+        font-size: 10px;
+        color: var(--text-muted);
+        padding: 6px;
+        background: var(--bg-card-light);
+        letter-spacing: 4px;
     }
 
     .modal-content {
-        padding: 24px !important;
+        padding: 20px !important;
         border-radius: 16px !important;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    /* ── FORM GRID MOBILE ── */
+    .form-grid[style*="grid-template-columns: repeat(3"] {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    /* Force 1 col for quota/retrait form */
+    .form-grid .field-item[style*="grid-column: span 3"] {
+        grid-column: span 2 !important;
+    }
+
+    /* ── PAGE HEADER BUTTONS MOBILE ── */
+    .page-header div[style*="display: flex; gap"] {
+        flex-wrap: wrap !important;
+        width: 100%;
+    }
+
+    .page-header .btn {
+        flex: 1 !important;
+        min-width: 120px !important;
+    }
+
+    /* ── TABLE HEAD FILTERS MOBILE ── */
+    .table-head {
+        flex-direction: column !important;
+        gap: 12px !important;
+    }
+    .table-actions {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        width: 100% !important;
+    }
+    .table-actions select,
+    .table-actions input {
+        flex: 1 !important;
+        min-width: 100px !important;
+        max-width: none !important;
+        width: auto !important;
+    }
+
+    /* ── QUOTA GRID MOBILE ── */
+    .quotas-grid {
+        grid-template-columns: 1fr !important;
     }
 }
 

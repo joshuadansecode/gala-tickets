@@ -591,6 +591,67 @@
     </div>
   </div>
 
+  <!-- MODAL EDIT PROFIL COMPLET -->
+  <div class="modal" id="modal-edit-profil">
+    <div class="modal-content" style="max-width: 500px; padding: 28px;">
+      <div class="modal-title" style="font-size: 20px; font-weight: 800; margin-bottom: 20px;">✏️ Modifier le profil</div>
+      <div id="edit-profil-name" style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;"></div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <div>
+          <label style="display:block; font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px">Prénom</label>
+          <input id="ep-prenom" class="field-input" placeholder="Prénom" style="width:100%; background:var(--bg-card-light); border:1px solid var(--border-gray); color:white; padding:12px; border-radius:12px;">
+        </div>
+        <div>
+          <label style="display:block; font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px">Nom</label>
+          <input id="ep-nom" class="field-input" placeholder="Nom" style="width:100%; background:var(--bg-card-light); border:1px solid var(--border-gray); color:white; padding:12px; border-radius:12px;">
+        </div>
+        <div>
+          <label style="display:block; font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px">Téléphone</label>
+          <input id="ep-tel" class="field-input" placeholder="+229 01 XX XX XX" style="width:100%; background:var(--bg-card-light); border:1px solid var(--border-gray); color:white; padding:12px; border-radius:12px;">
+        </div>
+        <div>
+          <label style="display:block; font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px">Rôle</label>
+          <select id="ep-role" style="width:100%; background:var(--bg-card-light); border:1px solid var(--border-gray); color:white; padding:12px; border-radius:12px;">
+            <option value="vendeur">Vendeur</option>
+            <option value="admin">Admin</option>
+            <option value="direction">Direction</option>
+            <option value="tresoriere">Trésorière</option>
+            <option value="comite">Comité</option>
+            <option value="observateur">Observateur</option>
+          </select>
+        </div>
+        <div style="grid-column: span 2;">
+          <label style="display:block; font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px">Actif</label>
+          <select id="ep-actif" style="width:100%; background:var(--bg-card-light); border:1px solid var(--border-gray); color:white; padding:12px; border-radius:12px;">
+            <option value="true">✅ Compte actif</option>
+            <option value="false">❌ Compte désactivé</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Séparateur -->
+      <div style="margin: 20px 0; border-top: 1px solid var(--border-gray); padding-top: 20px;">
+        <div style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px;">🔒 Nouveau mot de passe (optionnel)</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div>
+            <label style="display:block; font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px">Mot de passe</label>
+            <input id="ep-pass" type="password" class="field-input" placeholder="Laisser vide = inchangé" style="width:100%; background:var(--bg-card-light); border:1px solid var(--border-gray); color:white; padding:12px; border-radius:12px;">
+          </div>
+          <div>
+            <label style="display:block; font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px">Confirmer</label>
+            <input id="ep-pass2" type="password" class="field-input" placeholder="Même mot de passe" style="width:100%; background:var(--bg-card-light); border:1px solid var(--border-gray); color:white; padding:12px; border-radius:12px;">
+          </div>
+        </div>
+        <div id="ep-pass-hint" style="font-size:11px; color:var(--text-muted); margin-top:8px; display:none;">⚠️ Le changement de mot de passe est définitif.</div>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:8px;">
+        <button class="btn" style="flex:1; background:var(--gold); color:#000; font-weight:800; padding:12px; border-radius:12px; border:none; cursor:pointer;" onclick="sauverProfil()">💾 Sauvegarder</button>
+        <button class="btn" style="flex:1; background:var(--bg-card-light); border:1px solid var(--border-gray); color:var(--text-muted); padding:12px; border-radius:12px; cursor:pointer;" onclick="fermerModal('modal-edit-profil')">Annuler</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL EDIT QUOTA -->
   <div class="modal" id="modal-edit-quota">
     <div class="modal-content" style="max-width: 400px; padding: 24px;">
@@ -978,12 +1039,12 @@
                 ${!p.actif ? `<span style="font-size: 9px; font-weight: 900; color: var(--accent-glow); background: rgba(255, 0, 107, 0.1); padding: 2px 10px; border-radius: 10px; border: 1px solid var(--accent-glow); animation: pulse 2s infinite;">EN ATTENTE</span>` : ''}
             </div>
 
-            <div style="width: 100%; display: flex; gap: 10px; padding-top: 20px; border-top: 1px solid var(--border-gray);">
+            <div style="width: 100%; display: flex; gap: 8px; padding-top: 20px; border-top: 1px solid var(--border-gray);">
                 <button class="btn" style="flex: 1; height: 36px; font-size: 11px; background: var(--bg-card-light); border: 1px solid var(--border-gray); color: ${p.actif ? 'var(--accent-glow)' : 'var(--accent-green)'}; border-radius: 12px; cursor: pointer;" onclick="toggleActif('${p.id}',${p.actif})">
                     ${p.actif ? 'Désactiver' : 'Activer'}
                 </button>
-                <button class="btn" style="width: 36px; height: 36px; background: var(--bg-card-light); border: 1px solid var(--border-gray); color: white; border-radius: 12px; cursor: pointer;" onclick="editerRole('${p.id}', '${p.role}')" title="Modifier le rôle">
-                    ⚙️
+                <button class="btn" style="height: 36px; padding: 0 12px; background: var(--gold-pale); border: 1px solid var(--gold); color: var(--gold-light); border-radius: 12px; cursor: pointer; font-size: 11px; font-weight: 700;" onclick="editerProfil('${p.id}')" title="Modifier le profil">
+                    ✏️
                 </button>
             </div>
         </div>`;
@@ -999,6 +1060,80 @@
     }
     window.showModalCreate = showModalCreate;
     window.fermerModal = fermerModal;
+
+    // ── ÉDITION PROFIL COMPLET ──
+    let currentEditProfilId = null;
+
+    function editerProfil(id) {
+      const p = allProfiles.find(x => x.id === id);
+      if (!p) return;
+      currentEditProfilId = id;
+      document.getElementById('ep-prenom').value = p.prenom || '';
+      document.getElementById('ep-nom').value = p.nom || '';
+      document.getElementById('ep-tel').value = p.telephone || '';
+      document.getElementById('ep-role').value = p.role || 'vendeur';
+      document.getElementById('ep-actif').value = p.actif ? 'true' : 'false';
+      document.getElementById('ep-pass').value = '';
+      document.getElementById('ep-pass2').value = '';
+      document.getElementById('ep-pass-hint').style.display = 'none';
+      document.getElementById('edit-profil-name').textContent = `Compte : ${p.prenom} ${p.nom} — ${p.email || p.id}`;
+      document.getElementById('modal-edit-profil').classList.add('show');
+    }
+
+    // Afficher le hint si on commence à taper un mdp
+    document.getElementById('ep-pass').addEventListener('input', function() {
+      document.getElementById('ep-pass-hint').style.display = this.value ? 'block' : 'none';
+    });
+
+    async function sauverProfil() {
+      if (!currentEditProfilId) return;
+      const prenom = document.getElementById('ep-prenom').value.trim();
+      const nom = document.getElementById('ep-nom').value.trim();
+      const tel = document.getElementById('ep-tel').value.trim();
+      const role = document.getElementById('ep-role').value;
+      const actif = document.getElementById('ep-actif').value === 'true';
+      const pass = document.getElementById('ep-pass').value.trim();
+      const pass2 = document.getElementById('ep-pass2').value.trim();
+
+      if (!prenom || !nom) { showToast('⚠️ Prénom et Nom requis.', 'error'); return; }
+
+      if (pass && pass !== pass2) { showToast('❌ Les mots de passe ne correspondent pas.', 'error'); return; }
+      if (pass && pass.length < 6) { showToast('❌ Le mot de passe doit faire au moins 6 caractères.', 'error'); return; }
+
+      try {
+        // 1. Mettre à jour le profil
+        const { error: profErr } = await sb.from('profiles').update({
+          prenom, nom, role, actif, telephone: tel || null
+        }).eq('id', currentEditProfilId);
+        if (profErr) throw profErr;
+
+        // 2. Si mot de passe renseigné, le changer via Edge Function
+        if (pass) {
+          const { data: { session } } = await sb.auth.getSession();
+          const resp = await fetch('https://sykmncqdrmmoavixuxfw.supabase.co/functions/v1/update-user-password', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + session.access_token
+            },
+            body: JSON.stringify({ userId: currentEditProfilId, newPassword: pass })
+          });
+          if (!resp.ok) {
+            const err = await resp.json();
+            throw new Error(err.error || 'Erreur changement mdp');
+          }
+        }
+
+        showToast('✅ Profil mis à jour !', 'success');
+        fermerModal('modal-edit-profil');
+        await chargerTout();
+      } catch (e) {
+        console.error(e);
+        showToast('❌ ' + (e.message || 'Erreur'), 'error');
+      }
+    }
+    window.editerProfil = editerProfil;
+    window.sauverProfil = sauverProfil;
 
 
 
@@ -1141,8 +1276,9 @@
       const type = currentEditQuotaType;
       const val = parseInt(document.getElementById('input-edit-quota').value);
       if (isNaN(val) || val < 0) { showToast('⚠️ Valeur invalide.', 'error'); return; }
-      await sb.from('quotas_vendeurs').update({ max_tickets: val, updated_at: new Date().toISOString() }).eq('type_ticket', type);
-      showToast(`✅ Quota ${LABEL[type]} mis à jour!`, 'success');
+      const { error } = await sb.from('quotas_vendeurs').update({ max_tickets: val, updated_at: new Date().toISOString() }).eq('type_ticket', type);
+      if (error) { showToast('❌ Erreur: ' + error.message, 'error'); return; }
+      showToast(`✅ Quota ${LABEL[type] || type} mis à jour → ${val} places !`, 'success');
       fermerModal('modal-edit-quota');
       await chargerTout();
     }
