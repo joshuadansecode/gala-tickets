@@ -709,21 +709,28 @@
 
     async function chargerTout() {
       const [t1, t2, t3, t4, t5] = await Promise.all([
-        // Correction de la jointure: "distribue_par" est la clef étrangère
-        sb.from('distributions').select('*, vendeur:profiles!distribue_par(nom,prenom)').order('created_at', { ascending: true }),
+        // distributions sans join auto (FK pointe vers auth.users, pas profiles)
+        sb.from('distributions').select('*').order('created_at', { ascending: true }),
         sb.from('v_stats_par_type_distributions').select('*'),
         sb.from('v_bilan_distributions').select('*'),
         sb.from('profiles').select('*').order('created_at', { ascending: false }),
-        sb.from('retraits_tickets').select('*, vendeur:profiles!vendeur_id(nom,prenom)').order('created_at', { ascending: false }),
+        sb.from('retraits_tickets').select('*').order('created_at', { ascending: false }),
       ]);
-      allDistributions = t1.data || [];
+      allDistributions = (t1.data || []).map(d => {
+        const vendeur = (t4.data || []).find(p => p.id === d.distribue_par);
+        return { ...d, vendeur };
+      });
       statsType = t2.data || [];
       bilanVendeurs = t3.data || [];
       allProfiles = t4.data || [];
-      allRetraits = t5.data || [];
+      allRetraits = (t5.data || []).map(r => {
+        const vendeur = allProfiles.find(p => p.id === r.vendeur_id);
+        return { ...r, vendeur };
+      });
 
-      const { data: q } = await sb.from('quotas_vendeurs').select('*');
-      if (q) q.forEach(r => quotasData[r.type_ticket] = r);
+      // Utiliser la table quotas (qui a les données) — colonne "type" pas "type_ticket"
+      const { data: q } = await sb.from('quotas').select('*');
+      if (q) q.forEach(r => quotasData[r.type] = r);
 
       renderDashboard(); renderTickets(); renderPlacement();
       renderRetraits(); renderVendeurs(); renderQuotas();
@@ -1109,19 +1116,11 @@
 
         // 2. Si mot de passe renseigné, le changer via Edge Function
         if (pass) {
-          const { data: { session } } = await sb.auth.getSession();
-          const resp = await fetch('https://sykmncqdrmmoavixuxfw.supabase.co/functions/v1/update-user-password', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer ' + session.access_token
-            },
-            body: JSON.stringify({ userId: currentEditProfilId, newPassword: pass })
+          // Utiliser sb.functions.invoke qui gère l'auth automatiquement
+          const { data: fnData, error: fnError } = await sb.functions.invoke('update-user-password', {
+            body: { userId: currentEditProfilId, newPassword: pass }
           });
-          if (!resp.ok) {
-            const err = await resp.json();
-            throw new Error(err.error || 'Erreur changement mdp');
-          }
+          if (fnError) throw new Error(fnError.message || 'Erreur changement mdp');
         }
 
         showToast('✅ Profil mis à jour !', 'success');
@@ -1276,7 +1275,8 @@
       const type = currentEditQuotaType;
       const val = parseInt(document.getElementById('input-edit-quota').value);
       if (isNaN(val) || val < 0) { showToast('⚠️ Valeur invalide.', 'error'); return; }
-      const { error } = await sb.from('quotas_vendeurs').update({ max_tickets: val, updated_at: new Date().toISOString() }).eq('type_ticket', type);
+      // Utiliser la table `quotas` (colonne `type`) car c'est elle qui a les données
+      const { error } = await sb.from('quotas').update({ max_tickets: val, updated_at: new Date().toISOString() }).eq('type', type);
       if (error) { showToast('❌ Erreur: ' + error.message, 'error'); return; }
       showToast(`✅ Quota ${LABEL[type] || type} mis à jour → ${val} places !`, 'success');
       fermerModal('modal-edit-quota');
