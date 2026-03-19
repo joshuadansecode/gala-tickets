@@ -1,4 +1,4 @@
-import { supabase } from './app.js';
+import { supabase } from './auth.js';
 
 const API = {
     // Utilitaires
