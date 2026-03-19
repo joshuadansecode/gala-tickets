@@ -664,6 +664,7 @@
             <option value="admin">Admin</option>
             <option value="tresoriere">Trésorière</option>
             <option value="vendeur">Vendeur</option>
+            <option value="comite">Comité</option>
             <option value="direction">Direction</option>
             <option value="observateur">Observateur</option>
         </select>
@@ -1122,7 +1123,9 @@
     function renderVendeurs() {
       const grid = document.getElementById('tbody-vendeurs');
       grid.innerHTML = allProfiles.map(p => {
-        const initials = (p.prenom[0] + p.nom[0]).toUpperCase();
+        const p1 = p.prenom ? p.prenom[0] : '';
+        const p2 = p.nom ? p.nom[0] : '';
+        const initials = (p1 + p2).toUpperCase() || '??';
         const roleColor = p.role === 'admin' ? 'var(--accent-amber)' : p.role === 'tresoriere' ? 'var(--accent-blue)' : 'var(--accent-glow)';
         return `
         <div class="user-card" style="background: var(--bg-card); border: 1px solid var(--border-gray); border-radius: 24px; padding: 24px; display: flex; flex-direction: column; align-items: center; text-align: center; transition: var(--transition);">
