@@ -107,6 +107,9 @@
       <button class="nav-item" onclick="showView('historique', this)" style="margin-bottom: 8px;">
         <span class="nav-icon">📋</span> Historique
       </button>
+      <button class="nav-item" onclick="showView('nouveau', this)" style="margin-bottom: 8px;">
+        <span class="nav-icon">🎟️</span> Vendre Ticket
+      </button>
     </nav>
 
     <div class="sidebar-bottom" style="padding: 24px 16px;">
@@ -219,7 +222,85 @@
     </div>
 
     <!-- HISTORIQUE -->
-    <div class="view" id="view-historique">
+    <!-- ── NOUVEAU TICKET (Intégré pour Trésorière) ── -->
+    <div class="view" id="view-nouveau">
+      <div class="page-header" style="margin-bottom: 40px;">
+        <h1 class="page-title">Vente de ticket</h1>
+        <p class="page-sub">Enregistrez un nouvel acheteur (Accès Trésorière).</p>
+      </div>
+
+      <div class="form-card"
+        style="background: var(--bg-card); border: 1px solid var(--border-gray); border-radius: 24px; padding: 32px;">
+        <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+          <div class="field-group full" style="grid-column: span 2;">
+            <label class="field-label" style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Numéro Ticket (Optionnel pour Royal)</label>
+            <input class="field-input" id="nt-numero" placeholder="Ex: G-001, P-042..." style="width:100%; background:var(--bg-card-light); border:1px solid var(--border-gray); color:var(--accent-magenta); padding:12px; border-radius:12px; font-weight:800;">
+          </div>
+          <div class="field-group">
+            <label class="field-label" style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Prénom *</label>
+            <input class="field-input" id="nt-prenom" style="width:100%; background:var(--bg-card-light); border:1px solid var(--border-gray); color:white; padding:12px; border-radius:12px;">
+          </div>
+          <div class="field-group">
+            <label class="field-label" style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Nom *</label>
+            <input class="field-input" id="nt-nom" style="width:100%; background:var(--bg-card-light); border:1px solid var(--border-gray); color:white; padding:12px; border-radius:12px;">
+          </div>
+          <div class="field-group">
+            <label class="field-label" style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">WhatsApp *</label>
+            <input class="field-input" id="nt-tel" placeholder="+229 01 XX XX XX" style="width:100%; background:var(--bg-card-light); border:1px solid var(--border-gray); color:white; padding:12px; border-radius:12px;">
+          </div>
+          <div class="field-group">
+            <label class="field-label" style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Filière</label>
+            <input class="field-input" id="nt-filiere" style="width:100%; background:var(--bg-card-light); border:1px solid var(--border-gray); color:white; padding:12px; border-radius:12px;">
+          </div>
+          <div class="field-group">
+            <label class="field-label" style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Public *</label>
+            <select class="field-select" id="nt-public" onchange="updateTypes()" style="width:100%; background:var(--bg-card-light); border:1px solid var(--border-gray); color:white; padding:12px; border-radius:12px;">
+              <option value="">-- Choisir --</option>
+              <option value="etudiant">Interne (Étudiants/Staff)</option>
+              <option value="administration">Administration / Invités</option>
+              <option value="externe">Externe</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Type *</label>
+            <select class="field-select" id="nt-type" onchange="updatePrix()" style="width:100%; background:var(--bg-card-light); border:1px solid var(--border-gray); color:white; padding:12px; border-radius:12px;">
+              <option value="">-- Choisir --</option>
+            </select>
+          </div>
+          
+          <div class="field-group">
+            <label class="field-label" style="display: block; font-size: 13px; color: var(--accent-amber); margin-bottom: 8px;">Réduction (CFA)</label>
+            <input class="field-input" id="nt-reduction" type="number" placeholder="0" oninput="updatePrixFinal()" style="width:100%; background:var(--bg-card-light); border:1px solid var(--border-gray); color:white; padding:12px; border-radius:12px;">
+          </div>
+          <div class="field-group">
+            <label class="field-label" style="display: block; font-size: 13px; color: var(--accent-amber); margin-bottom: 8px;">Source Réduc.</label>
+            <select class="field-select" id="nt-source-reduc" style="width:100%; background:var(--bg-card-light); border:1px solid var(--border-gray); color:white; padding:12px; border-radius:12px;">
+              <option value="">-- Aucune --</option>
+              <option value="bde">Organisation BDE</option>
+              <option value="administration">Administration</option>
+            </select>
+          </div>
+
+          <div class="field-group" style="padding-top: 10px;">
+            <label class="field-label" style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Prix Final</label>
+            <div id="nt-prix" style="font-size: 20px; font-weight: 800; color: var(--accent-blue);">0 F CFA</div>
+          </div>
+          <div class="field-group" style="padding-top: 10px;">
+            <label class="field-label" style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Versé (Acompte) *</label>
+            <input class="field-input" id="nt-verse" type="number" placeholder="0" oninput="updateReste()" style="width:100%; background:var(--bg-card-light); border:1px solid var(--border-gray); color:white; padding:12px; border-radius:12px;">
+          </div>
+          
+          <div class="field-group full" style="grid-column: span 2; background: rgba(255,255,255,0.03); padding: 20px; border-radius: 16px;">
+            <label class="field-label" style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Reste à payer</label>
+            <div id="nt-reste" style="font-size: 28px; font-weight: 900; color: var(--accent-amber);">0 F CFA</div>
+          </div>
+        </div>
+        <div style="margin-top: 32px; display: flex; gap: 16px;">
+          <button class="btn" onclick="enregistrerTicketAdmin()" style="flex: 1; background: var(--gold); color: black; font-weight: 800; padding: 14px; border-radius: 12px; border: none; cursor: pointer;">🎟️ Confirmer la vente</button>
+          <button class="btn" id="btn-reset-vente" style="background: var(--bg-card-light); border: 1px solid var(--border-gray); color: var(--text-muted); padding: 14px; border-radius: 12px; cursor: pointer;">Réinitialiser</button>
+        </div>
+      </div>
+    </div>
       <div class="page-header" style="margin-bottom: 40px;">
         <h1 class="page-title">Historique des versements</h1>
         <p class="page-sub">Journal complet des entrées en caisse.</p>
@@ -481,8 +562,106 @@
     window.logout = () => Auth.logout();
     window.showToast = (m, t) => UI.notify(m, t === 'error' ? 'error' : 'success');
     window.updateSolde = updateSolde;
+    // Association event
     window.enregistrerVersement = enregistrerVersement;
     window.annulerVersement = annulerVersement;
+
+    // ── LOGIQUE DE VENTE (Intégré pour Trésorière) ──
+    const PRIX = {
+      etudiant: { gold_int: 10000, plat_int: 12000, diam_int: 15000 },
+      administration: { royal: 25000 },
+      externe: { gold_ext: 15000, diam_ext: 20000 }
+    };
+    const TICKETS_CONFIG = {
+      etudiant: [ { v: 'gold_int', l: 'Gold Int. (10k)' }, { v: 'plat_int', l: 'Plat. Int. (12k)' }, { v: 'diam_int', l: 'Diam. Int. (15k)' } ],
+      administration: [ { v: 'royal', l: 'Royal (25k)' } ],
+      externe: [ { v: 'gold_ext', l: 'Gold Ext. (15k)' }, { v: 'diam_ext', l: 'Diam. Ext. (20k)' } ]
+    };
+
+    window.updateTypes = function() {
+      const pub = document.getElementById('nt-public').value;
+      const sel = document.getElementById('nt-type');
+      sel.innerHTML = '<option value="">-- Choisir --</option>';
+      if (pub && TICKETS_CONFIG[pub]) {
+        TICKETS_CONFIG[pub].forEach(t => { sel.innerHTML += `<option value="${t.v}">${t.l}</option>`; });
+      }
+      window.updatePrixFinal();
+    };
+
+    window.updatePrixFinal = function() {
+      const pub = document.getElementById('nt-public').value;
+      const type = document.getElementById('nt-type').value;
+      const reduc = parseInt(document.getElementById('nt-reduction').value) || 0;
+      let final = 0;
+      if (pub && type && PRIX[pub]) final = Math.max(0, PRIX[pub][type] - reduc);
+      document.getElementById('nt-prix').textContent = final > 0 ? fmtMoney(final) : '— F CFA';
+      window.updateReste();
+    };
+    window.updatePrix = window.updatePrixFinal;
+
+    window.updateReste = function() {
+      const pub = document.getElementById('nt-public').value;
+      const type = document.getElementById('nt-type').value;
+      const verse = parseInt(document.getElementById('nt-verse').value) || 0;
+      const reduc = parseInt(document.getElementById('nt-reduction').value) || 0;
+      if (pub && type && PRIX[pub]) {
+        const prix_final = Math.max(0, PRIX[pub][type] - reduc);
+        const reste = Math.max(0, prix_final - verse);
+        document.getElementById('nt-reste').textContent = fmtMoney(reste);
+      } else {
+        document.getElementById('nt-reste').textContent = '— F CFA';
+      }
+    };
+
+    async function enregistrerTicketAdmin() {
+      const numero = document.getElementById('nt-numero').value.trim();
+      const prenom = document.getElementById('nt-prenom').value.trim();
+      const nom = document.getElementById('nt-nom').value.trim();
+      const tel = document.getElementById('nt-tel').value.trim();
+      const filiere = document.getElementById('nt-filiere').value.trim();
+      const pub = document.getElementById('nt-public').value;
+      const type = document.getElementById('nt-type').value;
+      const verse = parseInt(document.getElementById('nt-verse').value) || 0;
+      const reduc = parseInt(document.getElementById('nt-reduction').value) || 0;
+      const sourceReduc = document.getElementById('nt-source-reduc').value || null;
+
+      if (!prenom || !nom || !tel || !pub || !type) { showToast('⚠️ Champs obligatoires manquants.', 'error'); return; }
+      if (reduc > 0 && !sourceReduc) { showToast('⚠️ Source de réduction requise.', 'error'); return; }
+      if (type !== 'royal' && !numero) { showToast('⚠️ Numéro de ticket requis.', 'error'); return; }
+
+      try {
+        const distData = {
+           numero_ticket: numero || null, type_ticket: type, acheteur_nom: nom, acheteur_prenom: prenom,
+           acheteur_filiere: filiere, acheteur_whatsapp: tel, prix_unitaire: PRIX[pub][type], 
+           reduction: reduc, source_reduction: reduc > 0 ? sourceReduc : null, montant_paye: verse,
+           distribue_par: currentUser.uid
+        };
+        await API.distribuerTicket(distData);
+        showToast('✅ Ticket enregistré avec succès !', 'success');
+        resetFormVente();
+        await chargerDonnees();
+      } catch (e) {
+        showToast('❌ Erreur : ' + (e.message || "Erreur lors de l'enregistrement"), 'error');
+      }
+    }
+
+    function resetFormVente() {
+      ['nt-numero', 'nt-prenom', 'nt-nom', 'nt-tel', 'nt-filiere', 'nt-verse', 'nt-reduction'].forEach(id => {
+        const el = document.getElementById(id); if(el) el.value = '';
+      });
+      document.getElementById('nt-public').value = '';
+      document.getElementById('nt-source-reduc').value = '';
+      document.getElementById('nt-type').innerHTML = '<option value="">-- Choisir --</option>';
+      document.getElementById('nt-prix').textContent = '— F CFA';
+      document.getElementById('nt-reste').textContent = '— F CFA';
+    }
+
+    // Association event reset
+    const rBtn = document.getElementById('btn-reset-vente');
+    if(rBtn) rBtn.onclick = resetFormVente;
+    window.enregistrerTicketAdmin = enregistrerTicketAdmin;
+    window.resetFormVente = resetFormVente;
+    window.showToast = (m, t) => showToast(m, t === 'error' ? 'error' : 'success');
   </script>
 </body>
 
