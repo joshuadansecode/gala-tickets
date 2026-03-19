@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
   <title>GalaTickets — Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -113,7 +113,12 @@
         <span class="nav-icon" style="opacity: 0.7;">⚙️</span> Quotas
       </button>
     </nav>
-   </button>
+
+    <div class="nav-section-title">Outils</div>
+    <nav class="nav" style="padding: 0 16px 24px;">
+      <button class="nav-item" onclick="showView('exports', this)" style="margin-bottom: 4px;">
+        <span class="nav-icon" style="opacity: 0.7;">📁</span> Exports
+      </button>
     </nav>
 
     <div class="sidebar-bottom" style="padding: 24px 16px;">
@@ -1488,6 +1493,15 @@
       const target = document.getElementById(`view-${name}`);
       if (target) target.classList.add('active');
       if (btn) btn.classList.add('active');
+
+      // Auto-fermer la sidebar sur mobile après clic de section
+      if (window.innerWidth <= 768) {
+        document.body.classList.remove('sidebar-active');
+      }
+
+      // Remonter en haut du contenu
+      const main = document.querySelector('.main-content');
+      if (main) main.scrollTo({ top: 0, behavior: 'smooth' });
     }
     async function logout() { await Auth.logout(); }
 

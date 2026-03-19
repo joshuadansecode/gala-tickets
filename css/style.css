@@ -673,7 +673,8 @@ input:focus {
 
     .main-content {
         margin-left: 0 !important;
-        padding: 80px 16px 40px !important;
+        padding: 80px 16px 140px !important; /* 140px bottom pour le clavier virtuel */
+        overflow-y: auto;
     }
 
     body.sidebar-active .sidebar {
