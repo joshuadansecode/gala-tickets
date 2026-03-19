@@ -459,21 +459,28 @@
 
     async function chargerTout() {
       const [t1, t2, t3, t4, t5] = await Promise.all([
-        // Correction de la jointure: "distribue_par" est la clef étrangère
-        sb.from('distributions').select('*, vendeur:profiles!distribue_par(nom,prenom)').order('created_at', { ascending: true }),
+        // distributions sans join auto (FK pointe vers auth.users, pas profiles)
+        sb.from('distributions').select('*').order('created_at', { ascending: true }),
         sb.from('v_stats_par_type_distributions').select('*'),
         sb.from('v_bilan_distributions').select('*'),
         sb.from('profiles').select('*').order('created_at', { ascending: false }),
-        sb.from('retraits_tickets').select('*, vendeur:profiles!vendeur_id(nom,prenom)').order('created_at', { ascending: false }),
+        sb.from('retraits_tickets').select('*').order('created_at', { ascending: false }),
       ]);
-      allDistributions = t1.data || [];
+      allProfiles = t4.data || [];
+      allDistributions = (t1.data || []).map(d => {
+        const vendeur = allProfiles.find(p => p.id === d.distribue_par);
+        return { ...d, vendeur };
+      });
       statsType = t2.data || [];
       bilanVendeurs = t3.data || [];
-      allProfiles = t4.data || [];
-      allRetraits = t5.data || [];
+      allRetraits = (t5.data || []).map(r => {
+        const vendeur = allProfiles.find(p => p.id === r.vendeur_id);
+        return { ...r, vendeur };
+      });
 
-      const { data: q } = await sb.from('quotas_vendeurs').select('*');
-      if (q) q.forEach(r => quotasData[r.type_ticket] = r);
+      // Utiliser la table quotas (colonne "type") — quotas_vendeurs est vide
+      const { data: q } = await sb.from('quotas').select('*');
+      if (q) q.forEach(r => quotasData[r.type] = r);
 
       renderDashboard(); renderTickets(); renderPlacement();
       renderRetraits();
