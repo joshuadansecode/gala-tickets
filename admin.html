@@ -85,7 +85,7 @@
         JE</div>
       <div class="user-info">
         <div class="user-name" id="userName" style="font-size: 13px; font-weight: 700; color: white;">Joshua EDOH</div>
-        <div class="user-badge">SUPER ADMIN</div>
+        <div class="user-badge" id="userBadge">ADMIN</div>
       </div>
     </div>
     <div class="nav-section-title">Principal</div>
@@ -653,7 +653,6 @@
         </div>
       </div>
     </div>
-  </div>
 
   <!-- MODAL EDIT ROLE -->
   <div class="modal" id="modal-edit-role">
@@ -764,7 +763,11 @@
     window.UI = UI;
     const sb = supabase;
 
-    const PRIX = { gold_int: 10000, plat_int: 12000, diam_int: 15000, gold_ext: 15000, diam_ext: 20000, royal: 25000 };
+    const PRIX = {
+      etudiant: { gold_int: 10000, plat_int: 12000, diam_int: 15000 },
+      administration: { royal: 25000 },
+      externe: { gold_ext: 15000, diam_ext: 20000 }
+    };
     const LABEL = { gold_int: 'Gold Int.', plat_int: 'Plat. Int.', diam_int: 'Diam. Int.', gold_ext: 'Gold Ext.', diam_ext: 'Diam. Ext.', royal: 'Royal' };
     const BADGE = { gold_int: 'bg-gold', plat_int: 'bg-plat', diam_int: 'bg-diam', gold_ext: 'bg-gold', diam_ext: 'bg-diam', royal: 'bg-royal' };
     const COLORS = { gold_int: '#e8c97a', plat_int: '#b0c4de', diam_int: '#7dd8f8', gold_ext: '#e8c97a', diam_ext: '#7dd8f8', royal: '#d4a0f0' };
@@ -788,6 +791,7 @@
       currentUser = { ...profile, uid: session.user.id };
       document.getElementById('userInitials').textContent = (profile.prenom[0] + profile.nom[0]).toUpperCase();
       document.getElementById('userName').textContent = profile.prenom + ' ' + profile.nom;
+      document.getElementById('userBadge').textContent = profile.role.toUpperCase();
       document.getElementById('date-label').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
       await chargerTout();
     });
@@ -1201,9 +1205,14 @@
 
         // 2. Si mot de passe renseigné, le changer via Edge Function
         if (pass) {
-          // Utiliser sb.functions.invoke qui gère l'auth automatiquement
+          const { data: { session } } = await sb.auth.getSession();
+          if (!session) throw new Error("Session invalide. Veuillez vous reconnecter.");
+          
           const { data: fnData, error: fnError } = await sb.functions.invoke('update-user-password', {
-            body: { userId: currentEditProfilId, newPassword: pass }
+            body: { userId: currentEditProfilId, newPassword: pass },
+            headers: {
+              Authorization: `Bearer ${session.access_token}`
+            }
           });
           if (fnError) throw new Error(fnError.message || 'Erreur changement mdp');
         }
