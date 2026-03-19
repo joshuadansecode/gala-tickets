@@ -147,6 +147,11 @@
       <div class="form-card"
         style="background: var(--bg-card); border: 1px solid var(--border-gray); border-radius: var(--radius-lg); padding: 32px;">
         <div class="form-grid" style="gap: 24px;">
+          <div class="field-group full" style="grid-column: span 2;">
+            <label class="field-label"
+              style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Numéro Ticket (Optionnel pour Royal)</label>
+            <input class="field-input" id="nt-numero" placeholder="Ex: G-001, P-042 ou DE-012" style="font-size: 16px; font-weight: bold; color: var(--accent-magenta);">
+          </div>
           <div class="field-group">
             <label class="field-label"
               style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Prénom *</label>
@@ -159,7 +164,7 @@
           </div>
           <div class="field-group">
             <label class="field-label"
-              style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Téléphone</label>
+              style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Téléphone (WhatsApp) *</label>
             <input class="field-input" id="nt-tel" placeholder="Ex: 97 00 00 00" type="tel">
           </div>
           <div class="field-group">
@@ -174,7 +179,7 @@
             <select class="field-select" id="nt-public" onchange="updateTypes()"
               style="width: 100%; background: var(--bg-card-light); border: 1px solid var(--border-gray); color: white; padding: 16px; border-radius: var(--radius-sm); outline: none;">
               <option value="">-- Choisir --</option>
-              <option value="interne">Interne (Étudiants/Staff)</option>
+              <option value="etudiant">Interne (Étudiants/Staff)</option>
               <option value="administration">Administration / Invités</option>
               <option value="externe">Externe</option>
             </select>
@@ -188,25 +193,44 @@
               <option value="">-- Choisir d'abord le public --</option>
             </select>
           </div>
-          <div class="field-group">
+          
+          <!-- Section Comité / Admin uniquement (caché par défaut) -->
+          <div class="field-group admin-only" id="bloc-reduction" style="display: none;">
             <label class="field-label"
-              style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Prix total</label>
-            <div class="prix-display" id="nt-prix"
-              style="font-size: 20px; font-weight: 800; color: var(--accent-blue);">— F CFA</div>
+              style="display: block; font-size: 13px; color: var(--accent-amber); margin-bottom: 8px;">Réduction (F CFA)</label>
+            <input class="field-input" id="nt-reduction" type="number" placeholder="0" oninput="updatePrixFinal()" style="border-color: rgba(255, 170, 0, 0.3);">
           </div>
-          <div class="field-group">
+          <div class="field-group admin-only" id="bloc-source-reduc" style="display: none;">
             <label class="field-label"
-              style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Versé aujourd'hui
+              style="display: block; font-size: 13px; color: var(--accent-amber); margin-bottom: 8px;">Source Réduc.</label>
+            <select class="field-select" id="nt-source-reduc"
+              style="width: 100%; background: var(--bg-card-light); border: 1px solid rgba(255,170,0,0.3); color: white; padding: 16px; border-radius: var(--radius-sm); outline: none;">
+              <option value="">-- Aucune --</option>
+              <option value="bde">Organisation BDE</option>
+              <option value="administration">Administration</option>
+            </select>
+          </div>
+
+          <div class="field-group" style="padding-top: 10px;">
+            <label class="field-label"
+              style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Prix Final</label>
+            <div class="prix-display" id="nt-prix"
+              style="font-size: 20px; font-weight: 800; color: var(--accent-blue);">0 F CFA</div>
+          </div>
+          <div class="field-group" style="padding-top: 10px;">
+            <label class="field-label"
+              style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Versé aujourd'hui (Acompte)
               *</label>
             <input class="field-input" id="nt-verse" type="number" placeholder="0" oninput="updateReste()">
           </div>
+          
           <div class="field-group full"
             style="grid-column: span 2; background: rgba(255,255,255,0.03); padding: 20px; border-radius: 16px;">
             <label class="field-label"
               style="display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Reste à
               payer</label>
             <div class="reste-display" id="nt-reste"
-              style="font-size: 24px; font-weight: 800; color: var(--accent-amber);">— F CFA</div>
+              style="font-size: 28px; font-weight: 900; color: var(--accent-amber);">0 F CFA</div>
           </div>
         </div>
         <div class="form-actions" style="margin-top: 32px; display: flex; gap: 16px;">
@@ -310,50 +334,62 @@
 
   <script type="module">
     import { supabase, Auth, UI } from './js/auth.js';
+    import API from './js/api.js';
 
     window.supabase = supabase;
     window.UI = UI;
     const sb = supabase;
 
-    // Existing logic adapted
+    // Nouveau modèle de données (6 catégories)
     const TICKETS_CONFIG = {
-      interne: [{ v: 'gold', l: 'Gold — 10 000 F' }, { v: 'platinum', l: 'Platinum — 12 000 F' }, { v: 'diamond', l: 'Diamond — 15 000 F' }],
-      administration: [{ v: 'royal', l: 'Royal — 25 000 F' }],
-      externe: [{ v: 'gold', l: 'Gold — 13 000 F' }, { v: 'platinum', l: 'Platinum — 15 000 F' }, { v: 'diamond', l: 'Diamond — 20 000 F' }],
+      etudiant: [{ v: 'gold_int', l: 'Interne Gold — 10 000 F' }, { v: 'plat_int', l: 'Interne Platinum — 12 000 F' }, { v: 'diam_int', l: 'Interne Diamond — 15 000 F' }],
+      administration: [{ v: 'royal', l: 'Royal (VIP Admin) — 25 000 F' }],
+      externe: [{ v: 'gold_ext', l: 'Externe Gold — 15 000 F' }, { v: 'diam_ext', l: 'Externe Diamond — 20 000 F' }],
     };
     const PRIX = {
-      interne: { gold: 10000, platinum: 12000, diamond: 15000 },
+      etudiant: { gold_int: 10000, plat_int: 12000, diam_int: 15000 },
       administration: { royal: 25000 },
-      externe: { gold: 13000, platinum: 15000, diamond: 20000 }
+      externe: { gold_ext: 15000, diam_ext: 20000 }
     };
     const BADGE = {
-      gold: 'badge-gold', platinum: 'badge-platinum', diamond: 'badge-diamond',
-      royal: 'badge-royal'
+      gold_int: 'badge-gold', plat_int: 'badge-platinum', diam_int: 'badge-diamond',
+      gold_ext: 'badge-gold', diam_ext: 'badge-diamond', royal: 'badge-royal'
     };
     const TYPE_LABEL = {
-      gold: 'Gold', platinum: 'Platinum', diamond: 'Diamond',
-      royal: 'Royal'
+      gold_int: 'Gold Interne', plat_int: 'Plat. Interne', diam_int: 'Diam. Interne',
+      gold_ext: 'Gold Externe', diam_ext: 'Diam. Externe', royal: 'Royal'
     };
 
     let currentUser = null;
-    let allTickets = [];
-    let mesTickets = [];
-    let selectedTicket = null;
+    let mesDistributions = [];
+    let allDistributions = [];
+    let currentRole = null;
     let quotas = {};
 
     // ── INIT ─────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', async () => {
-      const result = await Auth.requireAuth('vendeur');
+      // Autoriser admin, tresoriere, comite, observateur, vendeur
+      const result = await Auth.requireAuth(['vendeur', 'admin', 'tresoriere', 'comite', 'observateur']);
       if (!result) return;
 
       const { session, profile } = result;
       currentUser = { ...profile, uid: session.user.id };
+      currentRole = profile.role;
+
+      // Afficher les champs Admin / Comité si nécessaire
+      if (['admin', 'tresoriere', 'comite'].includes(currentRole)) {
+          document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'block');
+      }
 
       // UI user
       const initials = (profile.prenom[0] + profile.nom[0]).toUpperCase();
       document.getElementById('userInitials').textContent = initials;
       document.getElementById('userName').textContent = profile.prenom + ' ' + profile.nom;
       document.getElementById('greetName').textContent = profile.prenom;
+      
+      // Mettre à jour le label du rôle dans la sidebar
+      const roleLabel = document.querySelector('.user-role');
+      if(roleLabel) roleLabel.textContent = currentRole.toUpperCase();
 
       // Date
       const now = new Date();
@@ -361,22 +397,27 @@
         now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
       // Charger quotas
-      const { data: q } = await sb.from('quotas').select('*');
-      if (q) q.forEach(r => { quotas[r.type] = r; });
+      try {
+          const q = await API.getQuotas();
+          if (q) q.forEach(r => { quotas[r.type] = r; });
+      } catch(e) { console.error("Quota error", e); }
 
       await chargerDonnees();
     });
 
     // ── CHARGEMENT DONNÉES ───────────────────────────────────────
     async function chargerDonnees() {
-      // Tous les tickets
-      const { data: all } = await sb.from('tickets')
-        .select('*, vendeur:profiles(nom, prenom)')
-        .order('created_at', { ascending: true });
-      allTickets = all || [];
-
-      // Mes tickets
-      mesTickets = allTickets.filter(t => t.vendeur_id === currentUser.uid);
+      // Récupérer uniquements les distributions faites par cet utilisateur
+      try {
+        mesDistributions = await API.getDistributions(currentUser.uid);
+        
+        // Récupérer toutes les distributions pour la recherche de versements
+        const { data: all } = await sb.from('distributions').select('*').order('created_at', { ascending: false });
+        allDistributions = all || [];
+      } catch (e) {
+        console.error("Erreur chargement:", e);
+        mesDistributions = [];
+      }
 
       renderDashboard();
       renderMes();
@@ -384,33 +425,33 @@
 
     // ── DASHBOARD ────────────────────────────────────────────────
     function renderDashboard() {
-      document.getElementById('stat-mes-tickets').textContent = mesTickets.length;
-      document.getElementById('stat-mes-encaisse').textContent = fmtMoney(mesTickets.reduce((s, t) => s + t.montant_paye, 0));
+      document.getElementById('stat-mes-tickets').textContent = mesDistributions.length;
+      document.getElementById('stat-mes-encaisse').textContent = fmtMoney(mesDistributions.reduce((s, d) => s + d.montant_paye, 0));
 
       const tbody = document.getElementById('tbody-dashboard');
-      const recents = [...mesTickets].reverse().slice(0, 5);
+      const recents = [...mesDistributions].slice(0, 5);
 
       if (!recents.length) {
         tbody.innerHTML = `<div class="empty-state" style="padding: 40px; text-align: center; background: var(--bg-card); border-radius: 20px; border: 1px dashed var(--border-gray);"><div class="empty-icon" style="font-size: 32px; margin-bottom: 12px;">🎟️</div><div class="empty-text" style="color: var(--text-muted);">Aucune vente enregistrée</div></div>`;
         return;
       }
 
-      tbody.innerHTML = recents.map(t => `
-        <div class="transaction-card" onclick="ouvrirModal(${JSON.stringify(t).replace(/"/g, '&quot;')})" style="background: var(--bg-card); border: 1px solid var(--border-gray); border-radius: 24px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: var(--transition);">
+      tbody.innerHTML = recents.map(d => `
+        <div class="transaction-card" onclick="ouvrirModal(${JSON.stringify(d).replace(/"/g, '&quot;')})" style="background: var(--bg-card); border: 1px solid var(--border-gray); border-radius: 24px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: var(--transition);">
             <div style="display: flex; align-items: center; gap: 16px;">
                 <div style="width: 48px; height: 48px; border-radius: 14px; background: var(--bg-card-light); display: flex; align-items: center; justify-content: center; font-weight: 700; color: white;">
-                    ${t.acheteur_prenom[0]}${t.acheteur_nom[0]}
+                    ${d.acheteur_prenom[0]}${d.acheteur_nom[0]}
                 </div>
                 <div>
-                    <div style="font-weight: 600; font-size: 15px;">${t.acheteur_prenom} ${t.acheteur_nom}</div>
-                    <div style="font-size: 12px; color: var(--text-muted);">${fmtDate(t.created_at)} • ${t.numero}</div>
+                    <div style="font-weight: 600; font-size: 15px;">${d.acheteur_prenom} ${d.acheteur_nom}</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">${fmtDate(d.created_at)} • ${d.numero_ticket || 'Royal'}</div>
                 </div>
             </div>
             <div style="text-align: right;">
-                <div style="font-weight: 800; font-size: 15px;">${fmtMoney(t.montant_paye)}</div>
+                <div style="font-weight: 800; font-size: 15px;">${fmtMoney(d.montant_paye)}</div>
                 <div style="font-size: 11px; margin-top: 4px;">
-                    <span class="badge" style="background: ${t.statut === 'solde' ? 'rgba(0, 230, 118, 0.1)' : 'rgba(255, 193, 7, 0.1)'}; color: ${t.statut === 'solde' ? 'var(--accent-green)' : 'var(--accent-amber)'}; padding: 2px 8px; border-radius: 6px;">
-                        ${t.statut === 'solde' ? 'Soldé' : 'Partiel'}
+                    <span class="badge" style="background: ${d.statut === 'paye' ? 'rgba(0, 230, 118, 0.1)' : d.statut === 'partiel' ? 'rgba(255, 193, 7, 0.1)' : 'rgba(255,50,50,0.1)'}; color: ${d.statut === 'paye' ? 'var(--accent-green)' : d.statut === 'partiel' ? 'var(--accent-amber)' : 'var(--accent-magenta)'}; padding: 2px 8px; border-radius: 6px;">
+                        ${d.statut === 'paye' ? 'Soldé' : d.statut === 'partiel' ? 'Partiel' : 'Impayé'}
                     </span>
                 </div>
             </div>
@@ -418,37 +459,35 @@
       `).join('');
     }
 
-    // ── FIN LISTE GLOBALE ────────────────────────────────────────
-
     // ── MES VENTES ───────────────────────────────────────────────
     function renderMes(filtre = '') {
       const tbody = document.getElementById('tbody-mes');
       const data = filtre
-        ? mesTickets.filter(t =>
-          `${t.numero} ${t.acheteur_nom} ${t.acheteur_prenom}`.toLowerCase().includes(filtre.toLowerCase()))
-        : mesTickets;
+        ? mesDistributions.filter(d =>
+          `${d.numero_ticket} ${d.acheteur_nom} ${d.acheteur_prenom}`.toLowerCase().includes(filtre.toLowerCase()))
+        : mesDistributions;
 
       if (!data.length) {
         tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">👤</div><div class="empty-text">Aucune vente enregistrée</div></div></td></tr>`;
         return;
       }
-      tbody.innerHTML = data.map(t => `
-    <tr onclick="ouvrirModal(${JSON.stringify(t).replace(/"/g, '&quot;')})">
-      <td><strong>${t.numero}</strong></td>
-      <td>${t.acheteur_prenom} ${t.acheteur_nom}</td>
-      <td class="td-gray">${t.telephone || '—'}</td>
-      <td class="td-gray">${t.filiere_classe || '—'}</td>
-      <td><span class="badge ${BADGE[t.type]}">${TYPE_LABEL[t.type]}</span></td>
-      <td>${fmtMoney(t.prix_total)}</td>
-      <td>${fmtMoney(t.montant_paye)}</td>
-      <td>${fmtMoney(t.prix_total - t.montant_paye)}</td>
-      <td><span class="badge ${t.statut === 'solde' ? 'badge-solde' : 'badge-partiel'}">${t.statut === 'solde' ? '✅ Soldé' : '🟡 Partiel'}</span></td>
-      <td class="td-gray">${fmtDate(t.created_at)}</td>
+      tbody.innerHTML = data.map(d => `
+    <tr onclick="ouvrirModal(${JSON.stringify(d).replace(/"/g, '&quot;')})">
+      <td><strong>${d.numero_ticket || 'ROYAL'}</strong></td>
+      <td>${d.acheteur_prenom} ${d.acheteur_nom}</td>
+      <td class="td-gray"><a href="${API.formatWhatsAppLink(d.acheteur_whatsapp)}" target="_blank" style="color:var(--accent-green); text-decoration:none;">${d.acheteur_whatsapp}</a></td>
+      <td class="td-gray">${d.acheteur_filiere || '—'}</td>
+      <td><span class="badge ${BADGE[d.type_ticket]}">${TYPE_LABEL[d.type_ticket]}</span></td>
+      <td>${fmtMoney(d.prix_final)} <em style="font-size:10px; opacity:0.5">${d.reduction ? '(Remisé)' : ''}</em></td>
+      <td>${fmtMoney(d.montant_paye)}</td>
+      <td>${fmtMoney(d.reste_a_payer)}</td>
+      <td><span class="badge ${d.statut === 'paye' ? 'badge-solde' : 'badge-partiel'}">${d.statut === 'paye' ? '✅ Soldé' : '🟡 Partiel'}</span></td>
+      <td class="td-gray">${fmtDate(d.created_at)}</td>
     </tr>`).join('');
     }
     function filtrerMes() { renderMes(document.getElementById('filter-mes').value); }
 
-    // ── NOUVEAU TICKET ───────────────────────────────────────────
+    // ── NOUVELLE DISTRIBUTION (TICKET) ───────────────────────────
     function updateTypes() {
       const pub = document.getElementById('nt-public').value;
       const sel = document.getElementById('nt-type');
@@ -458,36 +497,47 @@
           sel.innerHTML += `<option value="${t.v}">${t.l}</option>`;
         });
       }
-      document.getElementById('nt-prix').textContent = '— F CFA';
-      document.getElementById('nt-reste').textContent = '— F CFA';
+      window.updatePrixFinal();
     }
 
-    function updatePrix() {
+    window.updatePrixFinal = function() {
+      const pub = document.getElementById('nt-public').value;
+      const type = document.getElementById('nt-type').value;
+      const reduc = parseInt(document.getElementById('nt-reduction').value) || 0;
+      
+      let final = 0;
+      if (pub && type && PRIX[pub]) {
+         const prix = PRIX[pub][type];
+         final = Math.max(0, prix - reduc);
+      }
+      
+      if(final > 0 || (pub && type && reduc > 0)) {
+         document.getElementById('nt-prix').textContent = fmtMoney(final);
+      } else {
+         document.getElementById('nt-prix').textContent = '— F CFA';
+      }
+      window.updateReste();
+    }
+    window.updatePrix = updatePrixFinal; // Alias lié à l'HTML original
+
+    window.updateReste = function() {
       const pub = document.getElementById('nt-public').value;
       const type = document.getElementById('nt-type').value;
       const verse = parseInt(document.getElementById('nt-verse').value) || 0;
+      const reduc = parseInt(document.getElementById('nt-reduction').value) || 0;
+      
       if (pub && type && PRIX[pub]) {
         const prix = PRIX[pub][type];
-        document.getElementById('nt-prix').textContent = fmtMoney(prix);
-        document.getElementById('nt-reste').textContent = fmtMoney(Math.max(0, prix - verse));
+        const prix_final = Math.max(0, prix - reduc);
+        const reste = Math.max(0, prix_final - verse);
+        document.getElementById('nt-reste').textContent = fmtMoney(reste);
       } else {
-        document.getElementById('nt-prix').textContent = '— F CFA';
         document.getElementById('nt-reste').textContent = '— F CFA';
       }
     }
 
-    function updateReste() {
-      const pub = document.getElementById('nt-public').value;
-      const type = document.getElementById('nt-type').value;
-      const verse = parseInt(document.getElementById('nt-verse').value) || 0;
-      if (pub && type && PRIX[pub]) {
-        const prix = PRIX[pub][type];
-        const reste = Math.max(0, prix - verse);
-        document.getElementById('nt-reste').textContent = fmtMoney(reste);
-      }
-    }
-
     async function enregistrerTicket() {
+      const numero = document.getElementById('nt-numero').value.trim();
       const prenom = document.getElementById('nt-prenom').value.trim();
       const nom = document.getElementById('nt-nom').value.trim();
       const tel = document.getElementById('nt-tel').value.trim();
@@ -495,77 +545,80 @@
       const pub = document.getElementById('nt-public').value;
       const type = document.getElementById('nt-type').value;
       const verse = parseInt(document.getElementById('nt-verse').value) || 0;
+      
+      const reduc = parseInt(document.getElementById('nt-reduction').value) || 0;
+      const sourceReduc = document.getElementById('nt-source-reduc').value || null;
 
-      if (!prenom || !nom || !pub || !type || verse <= 0) {
-        showToast('⚠️ Veuillez remplir tous les champs obligatoires.', 'error'); return;
+      if (!prenom || !nom || !tel || !pub || !type) {
+        showToast('⚠️ Veuillez remplir tous les champs obligatoires (Téléphone obligatoire pour WA).', 'error'); return;
+      }
+      
+      if (reduc > 0 && !sourceReduc) {
+        showToast('⚠️ Vous avez saisi une réduction, vous devez spécifier la source (BDE ou Admin).', 'error'); return;
+      }
+
+      if (type !== 'royal' && !numero) {
+        showToast('⚠️ Le numéro de ticket est obligatoire (sauf pour Royal).', 'error'); return;
       }
 
       const btn = document.getElementById('btn-enregistrer');
       btn.disabled = true; btn.textContent = '⏳ Enregistrement...';
 
       try {
-        // Générer le numéro
-        const { data: numData } = await sb.rpc('generate_ticket_numero', { ticket_type: type });
-        const numero = numData;
-        const prix = PRIX[pub][type];
+        const prix_unitaire = PRIX[pub][type];
 
-        // Insérer ticket
-        const { data: ticket, error: errTicket } = await sb.from('tickets').insert({
-          numero,
-          type,
-          prix_total: prix,
-          acheteur_nom: nom,
-          acheteur_prenom: prenom,
-          telephone: tel || null,
-          filiere_classe: filiere || null,
-          public_cible: pub,
-          montant_paye: verse,
-          statut: verse >= prix ? 'solde' : 'partiel',
-          vendeur_id: currentUser.uid,
-        }).select().single();
+        // Format direct via API object
+        const distData = {
+           numero_ticket: numero || null,
+           type_ticket: type,
+           acheteur_nom: nom,
+           acheteur_prenom: prenom,
+           acheteur_filiere: filiere,
+           acheteur_whatsapp: tel,
+           prix_unitaire: prix_unitaire,
+           reduction: reduc,
+           source_reduction: reduc > 0 ? sourceReduc : null,
+           montant_paye: verse,
+           distribue_par: currentUser.uid
+        };
 
-        if (errTicket) throw errTicket;
+        const res = await API.distribuerTicket(distData);
 
-        // Insérer versement initial
-        await sb.from('versements_achat').insert({
-          ticket_id: ticket.id,
-          montant: verse,
-          vendeur_id: currentUser.uid,
-          note: 'Versement initial',
-        });
-
-        UI.notify('✅ Ticket enregistré avec succès !', 'success');
+        UI.notify('✅ Ticket enregistré et distribué !', 'success');
         resetForm();
         await chargerDonnees();
 
       } catch (e) {
         console.error(e);
-        UI.notify('❌ Erreur : ' + (e.message || "Action échouée"), 'error');
+        UI.notify('❌ Erreur : ' + (e.message || "Impossible d'insérer, vérifiez que le N° de ticket n'existe pas déjà et correspond aux contraintes de la DB."), 'error');
       }
 
-      btn.disabled = false; btn.innerHTML = '🎟️ Enregistrer le ticket';
+      btn.disabled = false; btn.innerHTML = '🎟️ Confirmer l\'enregistrement';
     }
 
     function resetForm() {
-      ['nt-prenom', 'nt-nom', 'nt-tel', 'nt-filiere', 'nt-verse'].forEach(id => {
-        document.getElementById(id).value = '';
+      ['nt-numero', 'nt-prenom', 'nt-nom', 'nt-tel', 'nt-filiere', 'nt-verse', 'nt-reduction'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.value = '';
       });
       document.getElementById('nt-public').value = '';
+      document.getElementById('nt-source-reduc').value = '';
       document.getElementById('nt-type').innerHTML = '<option value="">-- Choisir d\'abord le public --</option>';
       document.getElementById('nt-prix').textContent = '— F CFA';
       document.getElementById('nt-reste').textContent = '— F CFA';
     }
 
-    // ── RECHERCHE TICKET (versement) ─────────────────────────────
+    // ── RECHERCHE DISTRIBUTION (versement) ─────────────────────────────
     function rechercherTicket() {
       const q = document.getElementById('search-ticket').value.toLowerCase().trim();
       const div = document.getElementById('search-results');
+      if (!div) return;
       if (!q) { div.innerHTML = ''; return; }
 
-      const results = allTickets.filter(t =>
-        t.acheteur_nom.toLowerCase().includes(q) ||
-        t.acheteur_prenom.toLowerCase().includes(q) ||
-        t.numero.toLowerCase().includes(q)
+      const results = allDistributions.filter(d =>
+        d.acheteur_nom.toLowerCase().includes(q) ||
+        d.acheteur_prenom.toLowerCase().includes(q) ||
+        (d.numero_ticket && d.numero_ticket.toLowerCase().includes(q))
       );
 
       if (!results.length) {
@@ -573,26 +626,26 @@
         return;
       }
 
-      div.innerHTML = results.map(t => {
-        const reste = t.prix_total - t.montant_paye;
-        if (t.statut === 'solde') return `
+      div.innerHTML = results.map(d => {
+        if (d.statut === 'paye') return `
       <div style="padding:14px;border:1px solid rgba(255,255,255,0.06);border-radius:10px;margin-bottom:10px;opacity:0.5">
-        <strong>${t.numero}</strong> — ${t.acheteur_prenom} ${t.acheteur_nom}
+        <strong>${d.numero_ticket || 'ROYAL'}</strong> — ${d.acheteur_prenom} ${d.acheteur_nom}
         <span class="badge badge-solde" style="margin-left:8px">✅ Soldé</span>
       </div>`;
+        
         return `
       <div style="padding:14px;border:1px solid rgba(201,168,76,0.15);border-radius:10px;margin-bottom:10px;cursor:pointer;transition:background 0.2s"
-        onclick="ouvrirModal(${JSON.stringify(t).replace(/"/g, '&quot;')})"
+        onclick="ouvrirModal(${JSON.stringify(d).replace(/"/g, '&quot;')})"
         onmouseover="this.style.background='rgba(201,168,76,0.05)'"
         onmouseout="this.style.background=''">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
-            <strong style="color:var(--gold-light)">${t.numero}</strong>
-            <span style="color:var(--white);margin-left:10px">${t.acheteur_prenom} ${t.acheteur_nom}</span>
-            <span class="badge ${BADGE[t.type]}" style="margin-left:8px">${TYPE_LABEL[t.type]}</span>
+            <strong style="color:var(--gold-light)">${d.numero_ticket || 'ROYAL'}</strong>
+            <span style="color:var(--white);margin-left:10px">${d.acheteur_prenom} ${d.acheteur_nom}</span>
+            <span class="badge ${BADGE[d.type_ticket]}" style="margin-left:8px">${TYPE_LABEL[d.type_ticket]}</span>
           </div>
           <div style="text-align:right">
-            <div style="color:var(--orange);font-size:13px">Reste : ${fmtMoney(reste)}</div>
+            <div style="color:var(--orange);font-size:13px">Reste : ${fmtMoney(d.reste_a_payer)}</div>
             <span class="badge badge-partiel">🟡 Partiel</span>
           </div>
         </div>
@@ -601,20 +654,20 @@
     }
 
     // ── MODAL VERSEMENT ──────────────────────────────────────────
-    function ouvrirModal(ticket) {
-      if (!ticket) return;
-      selectedTicket = ticket;
-      const reste = ticket.prix_total - ticket.montant_paye;
+    let selectedDistribution = null;
+    
+    function ouvrirModal(dist) {
+      if (!dist) return;
+      selectedDistribution = dist;
       document.getElementById('modal-recap').innerHTML = `
-    <div class="recap-row"><div class="recap-label">Ticket</div><div class="recap-val gold">${ticket.numero}</div></div>
-    <div class="recap-row"><div class="recap-label">Acheteur</div><div class="recap-val">${ticket.acheteur_prenom} ${ticket.acheteur_nom}</div></div>
-    <div class="recap-row"><div class="recap-label">Type</div><div class="recap-val">${TYPE_LABEL[ticket.type]}</div></div>
-    <div class="recap-row"><div class="recap-label">Prix total</div><div class="recap-val">${fmtMoney(ticket.prix_total)}</div></div>
-    <div class="recap-row"><div class="recap-label">Déjà payé</div><div class="recap-val gold">${fmtMoney(ticket.montant_paye)}</div></div>
-    <div class="recap-row"><div class="recap-label">Reste dû</div><div class="recap-val red">${fmtMoney(reste)}</div></div>
+    <div class="recap-row"><div class="recap-label">Ticket</div><div class="recap-val gold">${dist.numero_ticket || 'ROYAL'}</div></div>
+    <div class="recap-row"><div class="recap-label">Acheteur</div><div class="recap-val">${dist.acheteur_prenom} ${dist.acheteur_nom}</div></div>
+    <div class="recap-row"><div class="recap-label">Type</div><div class="recap-val">${TYPE_LABEL[dist.type_ticket]}</div></div>
+    <div class="recap-row"><div class="recap-label">Prix Final</div><div class="recap-val">${fmtMoney(dist.prix_final)} <span style="font-size:10px;opacity:0.5">(${dist.reduction ? 'remisé' : 'normal'})</span></div></div>
+    <div class="recap-row"><div class="recap-label">Déjà payé</div><div class="recap-val gold">${fmtMoney(dist.montant_paye)}</div></div>
+    <div class="recap-row"><div class="recap-label">Reste dû</div><div class="recap-val red" style="font-size:20px">${fmtMoney(dist.reste_a_payer)}</div></div>
   `;
       document.getElementById('modal-montant').value = '';
-      document.getElementById('modal-note').value = '';
       document.getElementById('modal-versement').classList.add('show');
     }
     window.ouvrirModal = ouvrirModal;
@@ -646,40 +699,47 @@
 
     function fermerModal() {
       document.getElementById('modal-versement').classList.remove('show');
-      selectedTicket = null;
+      selectedDistribution = null;
     }
 
     async function confirmerVersement() {
       const montant = parseInt(document.getElementById('modal-montant').value);
-      const note = document.getElementById('modal-note').value.trim();
 
       if (!montant || montant <= 0) {
         showToast('⚠️ Montant invalide.', 'error'); return;
       }
 
-      const reste = selectedTicket.prix_total - selectedTicket.montant_paye;
-      if (montant > reste) {
-        showToast(`⚠️ Le montant dépasse le reste dû (${fmtMoney(reste)}).`, 'error'); return;
+      if (montant > selectedDistribution.reste_a_payer) {
+        showToast(`⚠️ Le montant dépasse le reste dû (${fmtMoney(selectedDistribution.reste_a_payer)}).`, 'error'); return;
       }
 
       try {
-        await sb.from('versements_achat').insert({
-          ticket_id: selectedTicket.id,
-          montant,
-          vendeur_id: currentUser.uid,
-          note: note || null,
+        await API.ajouterVersement({
+          distribution_id: selectedDistribution.id,
+          montant: montant,
+          enregistre_par: currentUser.uid
         });
 
         showToast(`✅ Versement de ${fmtMoney(montant)} enregistré !`, 'success');
         fermerModal();
         await chargerDonnees();
-        document.getElementById('search-ticket').value = '';
-        document.getElementById('search-results').innerHTML = '';
-
-      } catch (e) {
-        showToast('❌ Erreur lors de l\'enregistrement.', 'error');
+        
+        const searchInput = document.getElementById('search-ticket');
+        if(searchInput) searchInput.value = '';
+        
+        const searchResults = document.getElementById('search-results');
+        if(searchResults) searchResults.innerHTML = '';
+        
+      } catch(e) {
+          console.error(e);
+          showToast('❌ Erreur : ' + e.message, 'error');
       }
     }
+    window.confirmerVersement = confirmerVersement;
+    window.fermerModal = fermerModal;
+    window.rechercherTicket = rechercherTicket;
+
+
 
     // Expose to window for HTML onclicks
     window.showView = showView;

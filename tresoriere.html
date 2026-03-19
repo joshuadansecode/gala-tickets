@@ -286,11 +286,11 @@
 
     async function chargerDonnees() {
       // Bilan vendeurs via vue
-      const { data: bilan } = await sb.from('v_bilan_vendeurs').select('*');
+      const { data: bilan } = await sb.from('v_bilan_distributions').select('*');
       bilanVendeurs = bilan || [];
 
       // Vendeurs liste pour select
-      const { data: vends } = await sb.from('profiles').select('id,nom,prenom,role').eq('actif', true);
+      const { data: vends } = await sb.from('profiles').select('id,nom,prenom,role').in('role', ['vendeur','admin','comite']).eq('actif', true);
       vendeursList = vends || [];
 
       // Historique versements

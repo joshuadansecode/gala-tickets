@@ -1,6 +1,26 @@
 import { supabase } from './app.js';
 
 const API = {
+    // Utilitaires
+    formatWhatsAppLink(phone) {
+        if (!phone) return '#';
+        // Garder uniquement les chiffres
+        let clean = phone.replace(/\D/g, '');
+        
+        // Si ça commence par 229, on nettoie
+        if (clean.startsWith('229')) {
+            let core = clean.substring(3);
+            // Si le core commence par 01, on le coupe
+            if (core.startsWith('01') && core.length === 10) {
+                core = core.substring(2);
+            }
+            return `https://wa.me/229${core}`;
+        }
+        
+        // Autre pays ou format bizarre, on laisse tel quel
+        return `https://wa.me/${clean}`;
+    },
+
     // Quotas
     async getQuotas() {
         const { data, error } = await supabase.from('quotas').select('*');
@@ -8,66 +28,77 @@ const API = {
         return data;
     },
 
-    // Tickets
-    async createTicket(ticketData, firstPayment) {
-        // 1. Generate numero using RPC or manual sequence (RPC preferred for concurrency)
-        const { data: numero, error: numError } = await supabase.rpc('generate_ticket_numero', {
-            ticket_type: ticketData.type
-        });
-
-        if (numError) throw numError;
-
-        // 2. Insert ticket
-        const { data: ticket, error: ticketError } = await supabase
-            .from('tickets')
-            .insert([{ ...ticketData, numero }])
+    // Distributions (Remplace les anciens tickets/ventes)
+    async distribuerTicket(distData) {
+        // Enregistrer la distribution (ticket remis)
+        const { data: dist, error: distError } = await supabase
+            .from('distributions')
+            .insert([{
+                numero_ticket: distData.numero_ticket || null,
+                type_ticket: distData.type_ticket,
+                acheteur_nom: distData.acheteur_nom,
+                acheteur_prenom: distData.acheteur_prenom,
+                acheteur_filiere: distData.acheteur_filiere,
+                acheteur_whatsapp: distData.acheteur_whatsapp,
+                prix_unitaire: distData.prix_unitaire,
+                reduction: distData.reduction || 0,
+                source_reduction: distData.source_reduction || null,
+                distribue_par: distData.distribue_par
+            }])
             .select()
             .single();
 
-        if (ticketError) throw ticketError;
+        if (distError) throw distError;
 
-        // 3. Record first payment if > 0
-        if (firstPayment > 0) {
-            const { error: payError } = await supabase
-                .from('versements_achat')
-                .insert([{
-                    ticket_id: ticket.id,
-                    montant: firstPayment,
-                    vendeur_id: ticketData.vendeur_id,
-                    note: 'Premier versement à l\'achat'
-                }]);
-
-            if (payError) throw payError;
+        // S'il y a un acompte initial, l'enregistrer dans versements
+        if (distData.montant_paye > 0) {
+            await this.ajouterVersement({
+                distribution_id: dist.id,
+                montant: distData.montant_paye,
+                enregistre_par: distData.distribue_par
+            });
         }
 
-        return ticket;
+        return dist;
     },
 
-    async getVendeurStats(vendeurId) {
+    async ajouterVersement(versData) {
         const { data, error } = await supabase
-            .from('v_bilan_vendeurs')
-            .select('*')
-            .eq('vendeur_id', vendeurId)
+            .from('versements')
+            .insert([versData])
+            .select()
             .single();
-
+            
         if (error) throw error;
         return data;
     },
 
-    async getVendeurTickets(vendeurId) {
+    // Récupérer les distributions faites par quelqu'un
+    async getDistributions(userId) {
         const { data, error } = await supabase
-            .from('tickets')
+            .from('distributions')
             .select('*')
-            .eq('vendeur_id', vendeurId)
+            .eq('distribue_par', userId)
             .order('created_at', { ascending: false });
 
         if (error) throw error;
         return data;
     },
 
-    // Tresorerie
-    async getBilanVendeurs() {
-        const { data, error } = await supabase.from('v_bilan_vendeurs').select('*');
+    // Tresorerie & Suivi Admin
+    async getSuiviCreances() {
+        const { data, error } = await supabase.from('v_suivi_creances').select('*');
+        if (error) throw error;
+        return data;
+    },
+
+    async getUserStats(vendeurId) {
+        const { data } = await supabase.from('v_bilan_distributions').select('*').eq('vendeur_id', vendeurId).single();
+        return data || null;
+    },
+
+    async getDettesComite() {
+        const { data, error } = await supabase.from('v_dettes_comite').select('*').single();
         if (error) throw error;
         return data;
     },
@@ -82,6 +113,17 @@ const API = {
                 note: note
             }]);
         if (error) throw error;
+    },
+
+    formatWhatsAppLink(tel) {
+        if (!tel) return '#';
+        let clean = tel.replace(/\D/g, '');
+        if (!clean.startsWith('229') && clean.length === 8) {
+            clean = '22901' + clean;
+        } else if (!clean.startsWith('229') && clean.length >= 10) {
+            clean = '229' + clean;
+        }
+        return `https://wa.me/${clean}?text=${encodeURIComponent('Bonjour, suite à l\'enregistrement de votre ticket, nous vous contactons...')}`;
     }
 };
 
