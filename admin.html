@@ -100,7 +100,7 @@
         <span class="nav-icon" style="opacity: 0.7;">📍</span> Placement
       </button>
       <button class="nav-item" onclick="showView('nouveau', this)" style="margin-bottom: 4px;">
-        <span class="nav-icon" style="opacity: 0.7;">🎟️</span> Vendre Ticket
+        <span class="nav-icon" style="opacity: 0.7;">➕</span> Vendre Ticket
       </button>
     </nav>
 
@@ -565,20 +565,8 @@
       </div>
     </div>
 
-  </main>
-
-  <!-- MODAL FICHE TICKET -->
-  <div class="modal" id="modal-ticket">
-    <div class="modal-content">
-      <div class="modal-title">🎟️ Fiche ticket</div>
-      <div id="modal-ticket-content"></div>
-      <div style="display:flex;gap:8px;margin-top:20px">
-        <button class="btn btn-outline" onclick="fermerModal('modal-ticket')">Fermer</button>
-      </div>
-    </div>
-
     <!-- ── NOUVEAU TICKET (Intégré pour Admin) ── -->
-    <div class="view" id="view-nouveau">
+    <div class="view" id="view-nouveau" style="padding: 40px; padding-top: 100px;">
       <div class="page-header" style="margin-bottom: 40px;">
         <h1 class="page-title">Vente de ticket</h1>
         <p class="page-sub">Enregistrez un nouvel acheteur (L'Admin peut appliquer des réductions).</p>
@@ -653,6 +641,18 @@
         </div>
       </div>
     </div>
+  </main>
+
+  <!-- MODAL FICHE TICKET -->
+  <div class="modal" id="modal-ticket">
+    <div class="modal-content">
+      <div class="modal-title">🎟️ Fiche ticket</div>
+      <div id="modal-ticket-content"></div>
+      <div style="display:flex;gap:8px;margin-top:20px">
+        <button class="btn btn-outline" onclick="fermerModal('modal-ticket')">Fermer</button>
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL EDIT ROLE -->
   <div class="modal" id="modal-edit-role">
@@ -756,6 +756,10 @@
 
   <script type="module">
     import { supabase, Auth, UI } from './js/auth.js';
+    import API from './js/api.js';
+
+    window.API = API;
+    window.Auth = Auth;
 
     // Sauvegarder createClient avant d'écraser window.supabase avec le client
     const { createClient } = window.supabase;
@@ -1701,9 +1705,18 @@
     window.creerCompte = creerCompte;
     window.toggleActif = toggleActif;
     window.saveQuota = saveQuota;
+    window.confirmSaveQuota = confirmSaveQuota;
     window.trierTickets = trierTickets;
     window.trierPlacement = trierPlacement;
     window.editerRole = editerRole;
+    window.saveEditerRole = saveEditerRole;
+    window.editerProfil = editerProfil;
+    window.sauverProfil = sauverProfil;
+    window.updateTypes = updateTypes;
+    window.updatePrixFinal = updatePrixFinal;
+    window.updatePrix = updatePrix;
+    window.updateReste = updateReste;
+    window.logout = () => Auth.logout();
 
   </script>
 </body>
